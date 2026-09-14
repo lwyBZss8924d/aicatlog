@@ -79,3 +79,26 @@ test('a nested Git repository introduced after planning is not a projection targ
   await expect(applyPlan(f.ctx, plan)).rejects.toMatchObject({ code: 'GIT_PROJECTION_CONFLICT' });
   expect(await fingerprint(target)).toBeNull();
 });
+for (const change of ['nonignored', 'tracked', 'nested']) test(`Git ${change} drift cannot become success through recovery or receipt reuse`, async () => {
+  const f = await fixture();
+  const git = async (cwd: string, ...args: string[]) => { const p = Bun.spawn(['git', '-C', cwd, ...args], { stdout: 'pipe', stderr: 'pipe' }); expect(await p.exited).toBe(0); };
+  await git(f.root, 'init', '-q'); await writeFile(join(f.root, '.gitignore'), 'links/\n');
+  const parent = join(f.root, 'links'); await mkdir(parent);
+  const target = join(parent, 'selected');
+  const plan = await makePlan(f.ctx, 'projection completion', [f.root], [await operation('link', target, { source: f.target, git_root: f.root })]);
+  const mutate = async () => {
+    if (change === 'nonignored') await writeFile(join(f.root, '.gitignore'), 'different/\n');
+    else if (change === 'tracked') await git(f.root, 'add', '-f', '--', 'links/selected');
+    else await git(parent, 'init', '-q');
+  };
+  await expect(applyPlan(f.ctx, plan, false, async event => { if (event === 'published') await mutate(); })).rejects.toMatchObject({ code: 'RECOVERY_REQUIRED' });
+  await expect(applyPlan(f.ctx, plan, true)).rejects.toMatchObject({ code: 'GIT_PROJECTION_CONFLICT' });
+  expect(await fingerprint(join(f.ctx.stateRoot, 'runs', plan.id, 'receipt.json'))).toBeNull();
+  if (change === 'nonignored') await writeFile(join(f.root, '.gitignore'), 'links/\n');
+  else if (change === 'tracked') await git(f.root, 'rm', '--cached', '-f', '--', 'links/selected');
+  else await rm(join(parent, '.git'), { recursive: true });
+  expect((await applyPlan(f.ctx, plan, true)).status).toBe('applied');
+  expect((await applyPlan(f.ctx, plan)).already_applied).toBe(true);
+  await mutate();
+  await expect(applyPlan(f.ctx, plan)).rejects.toMatchObject({ code: 'GIT_PROJECTION_CONFLICT' });
+});

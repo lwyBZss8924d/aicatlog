@@ -33,7 +33,7 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
   }
   if (input.id && !selected) throw new AicatlogError('REGISTRATION_NOT_FOUND', `No registered Skill ${input.id}`);
   if (['update', 'remove'].includes(action) && !selected) throw new AicatlogError('SELECTION_REQUIRED', 'Select one registered Skill.');
-  if (selected && selected.owner !== 'aicatlog' && ['install', 'update', 'remove'].includes(action)) throw new AicatlogError('EXTERNAL_OWNER', `Use ${selected.owner} to modify this projection.`, { registration: selected.id, source: selected.source, metadata: selected.metadata });
+  if (selected && selected.owner !== 'aicatlog' && action !== 'sync') throw new AicatlogError('EXTERNAL_OWNER', `Use ${selected.owner} to modify this projection.`, { registration: selected.id, source: selected.source, metadata: selected.metadata });
   if (action === 'install' || action === 'update') {
     if (!selected && !input.source) throw new AicatlogError('SOURCE_REQUIRED', 'Supply a registered id or explicit source.');
     const source: Registration['source'] = selected?.source ?? (() => {
@@ -93,9 +93,13 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
       }
     }
   } else if (action === 'normalize') {
+    if (typeof registry.settings.skills_root !== 'string') throw new AicatlogError('SCOPE_REQUIRED', 'Normalization requires a declared Skills root.');
     const root = expand(String(registry.settings.skills_root), registryBase); roots.push(root);
     for (const rule of registry.normalization_rules) {
       const source = join(root, String(rule.source_relative)), target = join(root, String(rule.target_relative));
+      if (source === root || target === root || !inside(root, source) || !inside(root, target)) throw new AicatlogError('OUTSIDE_SCOPE', 'Normalization paths must be children of the declared Skills root.');
+      const protectedOwner = registry.skills.find(s => s.owner !== 'aicatlog' && s.target && [source, target].some(path => inside(expand(s.target!, registryBase), path) || inside(path, expand(s.target!, registryBase))));
+      if (protectedOwner) throw new AicatlogError('EXTERNAL_OWNER', `Normalization overlaps ${protectedOwner.owner}'s resource.`, { registration: protectedOwner.id });
       if (!await fingerprint(source)) continue;
       if (await fingerprint(target)) { conflicts.push(`Normalization target exists: ${target}`); continue; }
       operations.push(await operation('copy', target, { source }), await operation('remove', source));

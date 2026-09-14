@@ -87,7 +87,13 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
   if (plan.conflicts.length) throw new AicatlogError('PLAN_CONFLICT', 'Resolve conflicts and prepare a new plan.', plan.conflicts);
   const runRoot = join(ctx.stateRoot, 'runs', plan.id), journalPath = join(runRoot, 'journal.json'), receiptPath = join(runRoot, 'receipt.json');
   const complete = async () => {
-    for (const op of plan.operations) if (await fingerprint(op.target) !== await after(op)) return false;
+    for (const op of plan.operations) {
+      const root = plan.roots.find(r => inside(r, op.target));
+      if (!root) throw new AicatlogError('OUTSIDE_SCOPE', 'Target is outside the prepared scope.');
+      await assertContained(root, op.target);
+      await checkGitProjection(op);
+      if (await fingerprint(op.target) !== await after(op)) return false;
+    }
     return true;
   };
   const receipt = await jsonFile<Receipt>(receiptPath).catch(() => null);
@@ -164,7 +170,6 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       if (await fingerprint(op.target) !== row.expected_after) throw new AicatlogError('POSTCONDITION_FAILED', `Target does not match plan: ${op.target}`);
     }
     if (!await complete()) throw new AicatlogError('POSTCONDITION_FAILED', 'A previously published target changed before batch completion.');
-    for (const op of plan.operations) await checkGitProjection(op);
     journal.status = 'applied'; await saveJson(journalPath, journal); await observe?.('journal_applied');
     return await finish();
   } catch (error) {

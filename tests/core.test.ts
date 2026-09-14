@@ -142,3 +142,14 @@ describe('prepared operations and foundation', () => {
     expect((await f.api.call('find', { query: 'new-keyword' }) as any).total).toBe(2);
   });
 });
+test('external-owner sync remains possible but explicit or bulk normalization is refused', async () => {
+  const f = await fixture('skills'); const source = join(f.corpus, 'owned'); await file(join(source, 'SKILL.md'), '---\nname: owned\ndescription: Owner fixture\n---\n');
+  const registry = JSON.parse(await readFile(f.ctx.registryPath, 'utf8'));
+  registry.skills = [{ id: 'owned', name: 'owned', owner: 'external-kit', target: source, source: { kind: 'local', uri: source } }];
+  registry.clients = [{ id: 'bridge', root: join(f.root, 'bridge'), mode: 'bridge' }];
+  registry.normalization_rules = [{ source_relative: 'owned', target_relative: 'normalized' }];
+  await saveJson(f.ctx.registryPath, registry);
+  const sync = await skillsPlan(f.ctx, 'sync', { id: 'owned' }); expect(sync.operations).toHaveLength(1); expect(sync.operations[0]?.action).toBe('link');
+  await expect(skillsPlan(f.ctx, 'normalize', { id: 'owned' })).rejects.toMatchObject({ code: 'EXTERNAL_OWNER' });
+  await expect(skillsPlan(f.ctx, 'normalize', {})).rejects.toMatchObject({ code: 'EXTERNAL_OWNER' });
+});
