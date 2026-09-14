@@ -153,3 +153,14 @@ test('external-owner sync remains possible but explicit or bulk normalization is
   await expect(skillsPlan(f.ctx, 'normalize', { id: 'owned' })).rejects.toMatchObject({ code: 'EXTERNAL_OWNER' });
   await expect(skillsPlan(f.ctx, 'normalize', {})).rejects.toMatchObject({ code: 'EXTERNAL_OWNER' });
 });
+test('normalization does not follow a parent retargeted after planning', async () => {
+  const { rename, symlink } = await import('node:fs/promises');
+  const f = await fixture('skills'); await file(join(f.corpus, 'local/entry/SKILL.md'), 'same content'); await file(join(f.corpus, 'owner/entry/SKILL.md'), 'same content');
+  const registry = JSON.parse(await readFile(f.ctx.registryPath, 'utf8'));
+  registry.skills = [{ id: 'external', name: 'external', owner: 'external-kit', target: join(f.corpus, 'owner/entry'), source: { kind: 'local', uri: 'owner' } }];
+  registry.normalization_rules = [{ source_relative: 'local/entry', target_relative: 'normalized' }]; await saveJson(f.ctx.registryPath, registry);
+  const plan = await skillsPlan(f.ctx, 'normalize', {});
+  await rename(join(f.corpus, 'local'), join(f.corpus, 'original-local')); await symlink(join(f.corpus, 'owner'), join(f.corpus, 'local'));
+  await expect(applyPlan(f.ctx, plan)).rejects.toMatchObject({ code: 'PARENT_ALIAS_REFUSED' });
+  expect(await readFile(join(f.corpus, 'owner/entry/SKILL.md'), 'utf8')).toBe('same content');
+});

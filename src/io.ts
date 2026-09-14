@@ -39,6 +39,16 @@ export async function assertContained(root: string, target: string): Promise<voi
   if (target !== root && !inside(canonicalRoot, actual))
     throw new AicatlogError('OUTSIDE_SCOPE', `Parent link leaves scope: ${target}`);
 }
+export async function assertNoSymlinkParents(root: string, target: string): Promise<void> {
+  if (!inside(root, target)) throw new AicatlogError('OUTSIDE_SCOPE', 'Path leaves its declared parent-policy root.');
+  let parent = dirname(target);
+  while (inside(root, parent)) {
+    const info = await lstat(parent).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+    if (info?.isSymbolicLink()) throw new AicatlogError('PARENT_ALIAS_REFUSED', 'Normalization requires direct owning paths, without symlinked parents.', { parent });
+    if (parent === root) break;
+    parent = dirname(parent);
+  }
+}
 export async function atomic(path: string, data: string | Uint8Array, mode = 0o600): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   const temporary = `${path}.${randomUUID()}.tmp`;

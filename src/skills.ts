@@ -2,7 +2,7 @@ import { cp, mkdir, readFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { cloneRepo, discover, parseSource } from '@aicatlog/skills-core';
 import { AicatlogError, registrationSchema, type Context, type Registration, type Operation } from './types.ts';
-import { expand, fingerprint, inside, now, run, sha } from './io.ts';
+import { assertNoSymlinkParents, expand, fingerprint, inside, now, resolvedFuture, run, sha } from './io.ts';
 import { loadRegistry } from './registry.ts';
 import { makePlan, operation } from './plans.ts';
 
@@ -94,15 +94,18 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
     }
   } else if (action === 'normalize') {
     if (typeof registry.settings.skills_root !== 'string') throw new AicatlogError('SCOPE_REQUIRED', 'Normalization requires a declared Skills root.');
-    const root = expand(String(registry.settings.skills_root), registryBase); roots.push(root);
+    const root = await resolvedFuture(expand(String(registry.settings.skills_root), registryBase)); roots.push(root);
+    const ownership = await Promise.all(registry.skills.filter(s => s.owner !== 'aicatlog' && s.target).map(async s => ({ registration: s, paths: [expand(s.target!, registryBase), await resolvedFuture(expand(s.target!, registryBase))] })));
     for (const rule of registry.normalization_rules) {
       const source = join(root, String(rule.source_relative)), target = join(root, String(rule.target_relative));
       if (source === root || target === root || !inside(root, source) || !inside(root, target)) throw new AicatlogError('OUTSIDE_SCOPE', 'Normalization paths must be children of the declared Skills root.');
-      const protectedOwner = registry.skills.find(s => s.owner !== 'aicatlog' && s.target && [source, target].some(path => inside(expand(s.target!, registryBase), path) || inside(path, expand(s.target!, registryBase))));
+      await assertNoSymlinkParents(root, source); await assertNoSymlinkParents(root, target);
+      const paths = [source, target, await resolvedFuture(source), await resolvedFuture(target)];
+      const protectedOwner = ownership.find(owner => owner.paths.some(owned => paths.some(path => inside(owned, path) || inside(path, owned))))?.registration;
       if (protectedOwner) throw new AicatlogError('EXTERNAL_OWNER', `Normalization overlaps ${protectedOwner.owner}'s resource.`, { registration: protectedOwner.id });
       if (!await fingerprint(source)) continue;
       if (await fingerprint(target)) { conflicts.push(`Normalization target exists: ${target}`); continue; }
-      operations.push(await operation('copy', target, { source }), await operation('remove', source));
+      operations.push(await operation('copy', target, { source, no_symlink_parents_under: root }), await operation('remove', source, { no_symlink_parents_under: root }));
     }
   } else throw new AicatlogError('UNKNOWN_OPERATION', action);
   if (['install', 'update', 'remove'].includes(action)) operations.push(await operation('write', ctx.registryPath, { content: JSON.stringify(registry, null, 2) + '\n' }));

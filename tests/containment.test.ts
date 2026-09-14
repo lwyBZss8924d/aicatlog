@@ -48,3 +48,15 @@ test('ambiguous registration names cannot select a mutation owner implicitly', a
   await saveJson(f.ctx.registryPath, f.registry);
   await expect(skillsPlan(f.ctx, 'remove', { id: 'duplicate' })).rejects.toMatchObject({ code: 'AMBIGUOUS_REGISTRATION' });
 });
+test('normalization refuses in-root parent aliases and recognizes registered ownership aliases', async () => {
+  const f = await fixture(); const owner = join(f.corpus, 'owner'); await mkdir(join(owner, 'entry'), { recursive: true });
+  await writeFile(join(owner, 'entry', 'SKILL.md'), 'owner content');
+  await symlink(owner, join(f.corpus, 'alias'));
+  f.registry.settings.skills_root = f.corpus;
+  f.registry.skills.push({ id: 'external', name: 'external', owner: 'external-kit', source: { kind: 'local', uri: owner }, target: 'skills/owner/entry', state: 'active', activation: 'native', clients: [], metadata: {} });
+  f.registry.normalization_rules = [{ source_relative: 'alias/entry', target_relative: 'normalized' }]; await saveJson(f.ctx.registryPath, f.registry);
+  await expect(skillsPlan(f.ctx, 'normalize', {})).rejects.toMatchObject({ code: 'PARENT_ALIAS_REFUSED' });
+  f.registry.skills[0]!.target = 'skills/alias/entry'; f.registry.normalization_rules[0]!.source_relative = 'owner/entry'; await saveJson(f.ctx.registryPath, f.registry);
+  await expect(skillsPlan(f.ctx, 'normalize', {})).rejects.toMatchObject({ code: 'EXTERNAL_OWNER' });
+  expect(await readFile(join(owner, 'entry', 'SKILL.md'), 'utf8')).toBe('owner content');
+});

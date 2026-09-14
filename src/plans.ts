@@ -3,7 +3,7 @@ import { chmod, cp, lstat, mkdir, open, readFile, realpath, rename, rm, symlink 
 import { basename, dirname, join, relative } from 'node:path';
 import { renameExclusive } from './atomic-fs.ts';
 import { AicatlogError, planSchema, type Context, type Operation, type Plan } from './types.ts';
-import { assertContained, atomic, expand, fingerprint, inside, jsonFile, now, run, saveJson, sha } from './io.ts';
+import { assertContained, assertNoSymlinkParents, atomic, expand, fingerprint, inside, jsonFile, now, run, saveJson, sha } from './io.ts';
 
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
@@ -37,7 +37,11 @@ export type Receipt = { schema_version: string; plan_id: string; plan_sha256: st
 export type ApplyObserver = (event: 'staged' | 'retired' | 'published_before_journal' | 'published' | 'journal_applied', row?: JournalRow) => Promise<void>;
 const alive = (pid: number) => { try { process.kill(pid, 0); return true; } catch (error) { return (error as NodeJS.ErrnoException).code !== 'ESRCH'; } };
 
-async function checkGitProjection(op: Operation) {
+async function checkPathPolicies(op: Operation) {
+  if (op.no_symlink_parents_under) {
+    await assertNoSymlinkParents(op.no_symlink_parents_under, op.target);
+    if (op.source) await assertNoSymlinkParents(op.no_symlink_parents_under, op.source);
+  }
   if (!op.git_root) return;
   await assertContained(op.git_root, op.target);
   let parent = dirname(op.target);
@@ -60,7 +64,7 @@ async function after(op: Operation): Promise<string | null> {
 }
 async function restore(journal: Journal) {
   for (const row of [...journal.rows].reverse()) {
-    await checkGitProjection(row.operation);
+    await checkPathPolicies(row.operation);
     const current = await fingerprint(row.operation.target);
     const original = await fingerprint(row.backup);
     if (original !== null) {
@@ -91,7 +95,7 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       const root = plan.roots.find(r => inside(r, op.target));
       if (!root) throw new AicatlogError('OUTSIDE_SCOPE', 'Target is outside the prepared scope.');
       await assertContained(root, op.target);
-      await checkGitProjection(op);
+      await checkPathPolicies(op);
       if (await fingerprint(op.target) !== await after(op)) return false;
     }
     return true;
@@ -133,7 +137,7 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       const root = plan.roots.find(r => inside(r, op.target));
       if (!root) throw new AicatlogError('OUTSIDE_SCOPE', `Target outside prepared roots: ${op.target}`);
       await assertContained(root, op.target);
-      await checkGitProjection(op);
+      await checkPathPolicies(op);
       if (await fingerprint(op.target) !== op.before) throw new AicatlogError('TARGET_CHANGED', `Target changed since planning: ${op.target}`);
       if (op.source && op.action !== 'link' && await fingerprint(op.source, op.excludes) !== op.source_digest)
         throw new AicatlogError('SOURCE_CHANGED', `Source changed since planning: ${op.source}`);
@@ -145,6 +149,7 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       await mkdir(dirname(backup), { recursive: true }); await mkdir(dirname(staging), { recursive: true });
       const row: JournalRow = { operation: op, backup, staging, expected_after: await after(op), state: 'preparing' };
       journal.rows.push(row); await saveJson(journalPath, journal);
+      await checkPathPolicies(op);
       if (op.action === 'write') await atomic(staging, op.content ?? '', op.executable ? 0o755 : 0o644);
       else if (op.action !== 'remove') {
         if (!op.source) throw new AicatlogError('SOURCE_REQUIRED', 'Copy/link requires a source.');
@@ -157,7 +162,7 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       if (op.action !== 'remove' && await fingerprint(staging) !== row.expected_after) throw new AicatlogError('SOURCE_CHANGED', 'Staged contents differ from the prepared version.');
       row.state = 'staged'; await saveJson(journalPath, journal); await observe?.('staged', row);
       await mkdir(dirname(op.target), { recursive: true });
-      await checkGitProjection(op);
+      await checkPathPolicies(op);
       if (await fingerprint(op.target) !== op.before) throw new AicatlogError('TARGET_CHANGED', `Target changed while staging: ${op.target}`);
       if (op.before !== null) {
         renameExclusive(op.target, backup);
