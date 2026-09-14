@@ -145,6 +145,7 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       row.state = 'published'; await saveJson(journalPath, journal); await observe?.('published', row);
       if (await fingerprint(op.target) !== row.expected_after) throw new AicatlogError('POSTCONDITION_FAILED', `Target does not match plan: ${op.target}`);
     }
+    if (!await complete()) throw new AicatlogError('POSTCONDITION_FAILED', 'A previously published target changed before batch completion.');
     journal.status = 'applied'; await saveJson(journalPath, journal); await observe?.('journal_applied');
     return await finish();
   } catch (error) {

@@ -45,7 +45,7 @@
     },
     {
       "path": "workspace/harness-config/templates/task.txt",
-      "content": "{\"schema_version\":\"aicatlog.task.v1\",\"id\":\"replace-with-task-id\",\"kind\":\"task\",\"status\":\"planned\",\"owner\":\"replace-with-owner\"}\n\nObjective\nReplace with the useful result.\n\nAcceptance\nReplace with observable completion criteria.\n\nSources\nList the actual authority and source references.\n\nEvidence\nList artifacts only after they exist.\n\nNext action\nState one concrete continuation step.\n"
+      "content": "{\"schema_version\":\"aicatlog.task.v1\",\"id\":\"replace-with-task-id\",\"kind\":\"template\",\"record_kind\":\"task\",\"status\":\"planned\",\"owner\":\"replace-with-owner\"}\n\nObjective\nReplace with the useful result.\n\nAcceptance\nReplace with observable completion criteria.\n\nSources\nList the actual authority and source references.\n\nEvidence\nList artifacts only after they exist.\n\nNext action\nState one concrete continuation step.\n"
     }
   ]
 }

@@ -57,3 +57,8 @@ notes must not expose private environment paths or raw trajectories.
 Checkpoints record completed work, active assumptions, changed files, tests, unresolved
 issues and the next useful action. Keep paused external Goals paused. Background
 workers have explicit identities and leases; release only workers this tool owns.
+
+<!-- aicatlog:begin -->
+Use aicatlog with ./aicatlog-manifest.json for project resource navigation.
+Validate the selected scope with aicatlog harness check --repo .
+<!-- aicatlog:end -->

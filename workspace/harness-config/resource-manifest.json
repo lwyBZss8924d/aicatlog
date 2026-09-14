@@ -1,0 +1,7 @@
+{
+  "schema_version": "aicatlog.resources.v1",
+  "resources": [
+    {"id": "workflow", "kind": "workflow", "path": "workflow.txt", "when": "Plan, implement, validate or hand off project work"},
+    {"id": "checkpoint-template", "path": "templates/checkpoint.json", "when": "Record a continuation cursor"}
+  ]
+}

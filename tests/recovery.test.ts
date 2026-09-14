@@ -49,3 +49,13 @@ test('a newly published file is rolled back after a crash before its journal tra
   await expect(applyPlan(f.ctx, f.plan, true)).rejects.toMatchObject({ code: 'TARGET_CHANGED' });
   expect(await fingerprint(f.target)).toBeNull(); expect(await readFile(other, 'utf8')).toBe('user edit');
 });
+test('an earlier target drifting during a later operation prevents a successful batch receipt', async () => {
+  const f = await fixture(); const later = join(f.root, 'later');
+  const plan = await makePlan(f.ctx, 'batch drift', [f.root], [await operation('write', f.target, { content: 'candidate' }), await operation('write', later, { content: 'later' })]);
+  await expect(applyPlan(f.ctx, plan, false, async (event, row) => {
+    if (event === 'published' && row?.operation.target === later) await writeFile(f.target, 'concurrent edit');
+  })).rejects.toMatchObject({ code: 'RECOVERY_REQUIRED' });
+  expect(await readFile(f.target, 'utf8')).toBe('concurrent edit');
+  expect(await fingerprint(later)).toBeNull();
+  expect(await fingerprint(join(f.ctx.stateRoot, 'runs', plan.id, 'receipt.json'))).toBeNull();
+});

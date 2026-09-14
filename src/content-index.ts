@@ -212,7 +212,7 @@ export async function contentFind(ctx: Context, query: string, options: { scope:
     const result = await run(args, cfg.root, 300000);
     if (result.exit_code > 1 || result.timed_out) throw new AicatlogError('SEARCH_FAILED', result.stderr, { exit_code: result.exit_code });
     matches = result.stdout.split('\n').filter(Boolean).map(line => JSON.parse(line)).filter(row => row.type === 'match')
-      .map(row => ({ path: expand(row.data.path.text, cfg.root), line: row.data.line_number, text: row.data.lines.text }));
+      .map(row => ({ path: expand(row.data.path.text, cfg.root), line: row.data.line_number, text: String(row.data.lines.text).replace(/\r?\n$/, '') }));
   }
   const hits = matches.filter(m => inside(cfg.root, m.path)).map(m => ({ ...m,
     resource_ids: catalog.resources.filter(r => r.path === m.path).map(r => r.id) })).sort((a, b) => a.path.localeCompare(b.path) || (a.line ?? 0) - (b.line ?? 0));

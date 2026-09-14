@@ -21,7 +21,9 @@ if (source) {
 }
 const tgrep = native ? resolve(native) : source ? join(root, '.cache/native-build/release/tgrep') : undefined;
 if (!tgrep) throw new Error('Supply --tgrep-binary or --tgrep-source to assemble the declared backend.');
-await checked([tgrep, '--version']);
+const versionProcess = Bun.spawn([tgrep, '--version'], { stdout: 'pipe', stderr: 'pipe' });
+const backendVersion = (await new Response(versionProcess.stdout).text()).trim();
+if (await versionProcess.exited || backendVersion !== `tgrep ${vendor.sources.find((s: { id: string }) => s.id === 'tgrep').version}`) throw new Error('Backend version differs from the declared vendor version.');
 await checked([process.execPath, 'build', '--compile', './src/bin.ts', '--outfile', 'dist/aicatlog']);
 await checked([process.execPath, 'build', './src/index.ts', '--target', 'bun', '--external', 'zod', '--outdir', 'dist/sdk']);
 await checked([process.execPath, 'build', './src/bin.ts', '--target', 'bun', '--external', 'zod', '--outdir', 'dist/sdk']);
@@ -47,5 +49,5 @@ for (const file of ['bin/aicatlog', 'libexec/tgrep']) {
   const bytes = await readFile(join(release, file)); records.push({ path: file, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
 }
 await writeFile(join(release, 'release-manifest.json'), JSON.stringify({ schema_version: 'aicatlog.release.v1', version: pkg.version,
-  platform, bun_version: Bun.version, backends: vendor.sources.filter((s: { id: string }) => s.id === 'tgrep'), files: records }, null, 2) + '\n');
+  platform, bun_version: Bun.version, source_revision: (await new Response(Bun.spawn(['git', 'rev-parse', 'HEAD'], { cwd: root, stdout: 'pipe' }).stdout).text()).trim(), backends: vendor.sources.filter((s: { id: string }) => s.id === 'tgrep'), files: records }, null, 2) + '\n');
 console.log(JSON.stringify({ status: 'built', release, sdk: join(dist, 'aicatlog-sdk.tgz'), files: records }));

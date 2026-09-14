@@ -1,0 +1,46 @@
+{
+  "schema_version": "aicatlog.foundation-installation.v1",
+  "profile": "foundation",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "4aa20fc9b4c98b9f610a32d4f48efd34525d1aa95fcde11a825b0e7b5d73b186"
+    },
+    {
+      "path": "aicatlog-manifest.json",
+      "sha256": "11f101deef12beac5c07486e225cb870d253158a8e2de6937a6ec2f83aab8d36"
+    },
+    {
+      "path": "workspace/harness-config/resource-manifest.json",
+      "sha256": "c29baeeab247602577c51a713c303277dd80788bc1700bc1434676e1534d65b5"
+    },
+    {
+      "path": "workspace/harness-config/workflow.txt",
+      "sha256": "7dbe4b8b65cc203ae5f97ab1de1c4a5edb2cc4a4331076b0915564d9f348cf72"
+    },
+    {
+      "path": "workspace/harness-config/templates/checkpoint.json",
+      "sha256": "4728b56c9a25e679c2afe057119c360d356f7935724e041a0d32b3fd42de2aaa"
+    },
+    {
+      "path": "workspace/harness-tooling/repo-harness-cli",
+      "sha256": "58d4d2a262b908009b3410934176d9f95066a863b499df67640b03cd6b63e82a"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "0181fd8f4598f2b292be1b5fd15eb5790ade9ddaa2f23d7340b5fe30f6f7cf1d"
+    },
+    {
+      "path": "workspace/harness-config/harness-contract.json",
+      "sha256": "22f0b1c57c388870dcd07a007acc1cbd5da7b6f55cbef7e7fd35a1c83a3d9494"
+    },
+    {
+      "path": "workspace/harness-config/work-records.txt",
+      "sha256": "3bcdc8ccc13c7dc9ed7f851e0cbe5a78e92fcdf39c56f1d7bf9dd475e6249ae0"
+    },
+    {
+      "path": "workspace/harness-config/templates/task.txt",
+      "sha256": "853d0920342aa0af691fc8e9aa62af8107384f94d8da72427f4b32c3befbad0e"
+    }
+  ]
+}

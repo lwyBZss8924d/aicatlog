@@ -27,6 +27,8 @@ test('managed tgrep finds real text, serves shared leases and honors live scans'
     expect(indexed.backend).toBe('tgrep_server'); expect(indexed.items).toHaveLength(2);
     expect(indexed.items.find(x => x.path.endsWith('guide.txt'))).toMatchObject({ line: 2, text: 'needle active guidance' });
     expect(indexed.items.find(x => x.path.endsWith('guide.txt'))?.resource_ids).toContain('docs:guide');
+    const liveSame = await contentFind(ctx, 'needle', { scope: 'docs', fresh: true });
+    expect(liveSame.items).toEqual(indexed.items);
     await writeFile(join(corpus, 'new.txt'), 'brand-new-current-value\n');
     const live = await contentFind(ctx, 'brand-new-current-value', { scope: 'docs', fresh: true });
     expect(live.backend).toBe('tgrep_live_scan'); expect(live.items).toHaveLength(1);
