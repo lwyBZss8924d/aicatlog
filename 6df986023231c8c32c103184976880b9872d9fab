@@ -1,0 +1,17 @@
+{
+  "schema_version": "proof_of_useful_work.v1",
+  "commit": "6df986023231c8c32c103184976880b9872d9fab",
+  "phase": "R2-project-projection",
+  "status": "in_progress",
+  "outcome": "Add config-driven exact project links, worktree discovery, apply-time Git guards and unambiguous registration selection",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59"
+  ],
+  "validation": [
+    "bun run check: 46 tests pass and typecheck pass",
+    "Project worker result integrated; native worker ID unavailable and not inferred"
+  ],
+  "remote_push": false
+}
