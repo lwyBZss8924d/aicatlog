@@ -3,7 +3,7 @@ import { chmod, cp, lstat, mkdir, open, readFile, realpath, rename, rm, symlink 
 import { basename, dirname, join, relative } from 'node:path';
 import { renameExclusive } from './atomic-fs.ts';
 import { AicatlogError, planSchema, type Context, type Operation, type Plan } from './types.ts';
-import { assertContained, assertNoSymlinkParents, atomic, expand, fingerprint, inside, jsonFile, now, run, saveJson, sha } from './io.ts';
+import { assertContained, assertNoSymlinkParents, atomic, expand, fingerprint, inside, jsonFile, now, resolvedFuture, run, saveJson, sha } from './io.ts';
 
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
@@ -41,6 +41,14 @@ async function checkPathPolicies(op: Operation) {
   if (op.no_symlink_parents_under) {
     await assertNoSymlinkParents(op.no_symlink_parents_under, op.target);
     if (op.source) await assertNoSymlinkParents(op.no_symlink_parents_under, op.source);
+  }
+  if (op.protected_paths?.length) {
+    const selected = await Promise.all([op.target, ...(op.source ? [op.source] : [])].map(resolvedFuture));
+    for (const path of op.protected_paths) {
+      const owned = await resolvedFuture(path);
+      if (selected.some(value => inside(owned, value) || inside(value, owned)))
+        throw new AicatlogError('EXTERNAL_OWNER', 'Operation overlaps a protected source-owner path.', { path });
+    }
   }
   if (!op.git_root) return;
   await assertContained(op.git_root, op.target);
@@ -91,6 +99,12 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
   if (plan.conflicts.length) throw new AicatlogError('PLAN_CONFLICT', 'Resolve conflicts and prepare a new plan.', plan.conflicts);
   const runRoot = join(ctx.stateRoot, 'runs', plan.id), journalPath = join(runRoot, 'journal.json'), receiptPath = join(runRoot, 'receipt.json');
   const complete = async () => {
+    if (plan.registry_sha256) {
+      const registryWrite = plan.operations.find(op => op.target === ctx.registryPath);
+      const expected = registryWrite ? await after(registryWrite) : `file:${plan.registry_sha256}`;
+      const actual = registryWrite ? await fingerprint(ctx.registryPath) : `file:${sha(await readFile(ctx.registryPath))}`;
+      if (actual !== expected) return false;
+    }
     for (const op of plan.operations) {
       const root = plan.roots.find(r => inside(r, op.target));
       if (!root) throw new AicatlogError('OUTSIDE_SCOPE', 'Target is outside the prepared scope.');

@@ -105,7 +105,8 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
       if (protectedOwner) throw new AicatlogError('EXTERNAL_OWNER', `Normalization overlaps ${protectedOwner.owner}'s resource.`, { registration: protectedOwner.id });
       if (!await fingerprint(source)) continue;
       if (await fingerprint(target)) { conflicts.push(`Normalization target exists: ${target}`); continue; }
-      operations.push(await operation('copy', target, { source, no_symlink_parents_under: root }), await operation('remove', source, { no_symlink_parents_under: root }));
+      const policy = { no_symlink_parents_under: root, protected_paths: ownership.map(owner => expand(owner.registration.target!, registryBase)) };
+      operations.push(await operation('copy', target, { source, ...policy }), await operation('remove', source, policy));
     }
   } else throw new AicatlogError('UNKNOWN_OPERATION', action);
   if (['install', 'update', 'remove'].includes(action)) operations.push(await operation('write', ctx.registryPath, { content: JSON.stringify(registry, null, 2) + '\n' }));

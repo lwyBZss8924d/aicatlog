@@ -102,3 +102,8 @@ for (const change of ['nonignored', 'tracked', 'nested']) test(`Git ${change} dr
   await mutate();
   await expect(applyPlan(f.ctx, plan)).rejects.toMatchObject({ code: 'GIT_PROJECTION_CONFLICT' });
 });
+test('receipt reuse cannot validate a projection after registry authority changes', async () => {
+  const f = await fixture(); await applyPlan(f.ctx, f.plan);
+  await saveJson(f.ctx.registryPath, { authority: 'changed' });
+  await expect(applyPlan(f.ctx, f.plan)).rejects.toMatchObject({ code: 'POST_APPLY_DRIFT' });
+});
