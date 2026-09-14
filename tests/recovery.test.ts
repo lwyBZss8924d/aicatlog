@@ -59,3 +59,23 @@ test('an earlier target drifting during a later operation prevents a successful 
   expect(await fingerprint(later)).toBeNull();
   expect(await fingerprint(join(f.ctx.stateRoot, 'runs', plan.id, 'receipt.json'))).toBeNull();
 });
+test('a Git projection plan refuses an ignore-policy change before apply', async () => {
+  const f = await fixture();
+  const git = Bun.spawn(['git', 'init', '-q', f.root], { stdout: 'pipe', stderr: 'pipe' }); expect(await git.exited).toBe(0);
+  const target = join(f.root, 'projected'); await writeFile(join(f.root, '.gitignore'), 'projected\n');
+  const plan = await makePlan(f.ctx, 'git projection', [f.root], [await operation('link', target, { source: f.target, git_root: f.root })]);
+  await writeFile(join(f.root, '.gitignore'), 'different\n');
+  await expect(applyPlan(f.ctx, plan)).rejects.toMatchObject({ code: 'GIT_PROJECTION_CONFLICT' });
+  expect(await fingerprint(target)).toBeNull(); expect(await readFile(f.target, 'utf8')).toBe('original');
+});
+test('a nested Git repository introduced after planning is not a projection target', async () => {
+  const f = await fixture();
+  const git = async (...args: string[]) => { const p = Bun.spawn(['git', ...args], { stdout: 'pipe', stderr: 'pipe' }); expect(await p.exited).toBe(0); };
+  await git('init', '-q', f.root); await writeFile(join(f.root, '.gitignore'), 'nested/\n');
+  const nested = join(f.root, 'nested'); await mkdir(nested);
+  const target = join(nested, 'entry');
+  const plan = await makePlan(f.ctx, 'nested scope drift', [f.root], [await operation('link', target, { source: f.target, git_root: f.root })]);
+  await git('init', '-q', nested);
+  await expect(applyPlan(f.ctx, plan)).rejects.toMatchObject({ code: 'GIT_PROJECTION_CONFLICT' });
+  expect(await fingerprint(target)).toBeNull();
+});

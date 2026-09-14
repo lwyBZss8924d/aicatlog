@@ -1,3 +1,4 @@
+import packageInfo from "../package.json";
 import { Cli } from 'incur';
 import { z } from 'zod';
 import { context, expand, inputJson, jsonFile, run } from './io.ts';
@@ -9,6 +10,7 @@ import { skillsPlan, skillsStatus } from './skills.ts';
 import { bootstrap, checkFoundation } from './foundation.ts';
 import { dirname } from 'node:path';
 import { fetchCommand, type TransportCommand } from './transport.ts';
+import { projectProjectionPlan } from './project-projection.ts';
 
 const globals = z.object({
   registry: z.string().optional().describe('Explicit user or repository registry JSON'),
@@ -29,7 +31,7 @@ type Definition = { description: string; args?: z.ZodObject<any>; options?: z.Zo
   sourceWrite?: boolean; readOnly?: boolean; run: (ctx: Context, input: any) => Promise<unknown> };
 
 export function createAicatlog(defaults: Partial<Context> = {}, extensions: Extension[] = []): Aicatlog {
-  const cli = Cli.create('aicatlog', { version: '0.1.0', description: 'Discover environment and harness resources, inspect contracts, retrieve focused context and apply prepared changes.',
+  const cli = Cli.create('aicatlog', { version: packageInfo.version, description: 'Discover environment and harness resources, inspect contracts, retrieve focused context and apply prepared changes.',
     globals, sync: false, update: false });
   const groups = new Map<string, ReturnType<typeof Cli.create>>();
   const definitions = new Map<string, { definition: Definition; schema: z.ZodObject<any> }>();
@@ -116,9 +118,9 @@ export function createAicatlog(defaults: Partial<Context> = {}, extensions: Exte
   add('skills status', { readOnly: true, description: 'Inspect desired and observed installation state without updating any resources.', run: skillsStatus });
   for (const action of ['install', 'update', 'remove', 'sync', 'normalize']) add(`skills ${action}`, {
     description: `Prepare ${action} for selected Skills; inspect the returned plan before apply.`, args: z.object({ id: z.string().optional() }),
-    options: z.object({ source: z.string().optional(), skill: z.string().optional(), scope: z.string().optional(), target: z.string().optional(), client: z.string().optional() }),
+    options: z.object({ source: z.string().optional(), skill: z.string().optional(), scope: z.string().optional(), target: z.string().optional(), client: z.string().optional(), project: z.string().optional(), entry: z.string().optional(), worktrees: z.boolean().default(false) }),
     output: planSchema.extend({ plan_path: z.string() }),
-    run: (ctx, input) => skillsPlan(ctx, action, input),
+    run: (ctx, input) => action === 'sync' && input.project ? projectProjectionPlan(ctx, { ...input, scope: z.enum(['global_to_project', 'project']).parse(input.scope ?? 'global_to_project') }) : skillsPlan(ctx, action, input),
   });
   add('apply', { description: 'Apply the exact prepared plan, verifying source/target versions and preserving recovery data.', sourceWrite: true,
     options: z.object({ plan: z.string(), recover: z.boolean().default(false) }), run: async (ctx, input) => applyPlan(ctx, await jsonFile(expand(input.plan)), input.recover) });

@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { chmod, cp, lstat, mkdir, open, readFile, rename, rm, symlink } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { chmod, cp, lstat, mkdir, open, readFile, realpath, rename, rm, symlink } from 'node:fs/promises';
+import { basename, dirname, join, relative } from 'node:path';
 import { renameExclusive } from './atomic-fs.ts';
 import { AicatlogError, planSchema, type Context, type Operation, type Plan } from './types.ts';
-import { assertContained, atomic, expand, fingerprint, inside, jsonFile, now, saveJson, sha } from './io.ts';
+import { assertContained, atomic, expand, fingerprint, inside, jsonFile, now, run, saveJson, sha } from './io.ts';
 
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
@@ -37,6 +37,21 @@ export type Receipt = { schema_version: string; plan_id: string; plan_sha256: st
 export type ApplyObserver = (event: 'staged' | 'retired' | 'published_before_journal' | 'published' | 'journal_applied', row?: JournalRow) => Promise<void>;
 const alive = (pid: number) => { try { process.kill(pid, 0); return true; } catch (error) { return (error as NodeJS.ErrnoException).code !== 'ESRCH'; } };
 
+async function checkGitProjection(op: Operation) {
+  if (!op.git_root) return;
+  await assertContained(op.git_root, op.target);
+  let parent = dirname(op.target);
+  while (!await lstat(parent).catch(error => { if (error.code === 'ENOENT') return null; throw error; })) parent = dirname(parent);
+  const owner = await run(['git', '-C', parent, 'rev-parse', '--show-toplevel']);
+  if (owner.exit_code || await realpath(owner.stdout.replace(/\r?\n$/, '')) !== await realpath(op.git_root))
+    throw new AicatlogError('GIT_PROJECTION_CONFLICT', 'Projection parent no longer belongs to the prepared repository.');
+  const path = relative(op.git_root, op.target);
+  const tracked = await run(['git', '--literal-pathspecs', '-C', op.git_root, 'ls-files', '--', path]);
+  const ignored = await run(['git', '-C', op.git_root, 'check-ignore', '--no-index', '--quiet', '--', path]);
+  if (tracked.exit_code || tracked.stdout.trim() || ignored.exit_code)
+    throw new AicatlogError('GIT_PROJECTION_CONFLICT', 'Projection target must still be ignored and untracked in its prepared repository.', { root: op.git_root, target: op.target });
+}
+
 async function after(op: Operation): Promise<string | null> {
   if (op.action === 'remove') return null;
   if (op.action === 'write') return `file:${sha(op.content ?? '')}`;
@@ -45,6 +60,7 @@ async function after(op: Operation): Promise<string | null> {
 }
 async function restore(journal: Journal) {
   for (const row of [...journal.rows].reverse()) {
+    await checkGitProjection(row.operation);
     const current = await fingerprint(row.operation.target);
     const original = await fingerprint(row.backup);
     if (original !== null) {
@@ -111,6 +127,7 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       const root = plan.roots.find(r => inside(r, op.target));
       if (!root) throw new AicatlogError('OUTSIDE_SCOPE', `Target outside prepared roots: ${op.target}`);
       await assertContained(root, op.target);
+      await checkGitProjection(op);
       if (await fingerprint(op.target) !== op.before) throw new AicatlogError('TARGET_CHANGED', `Target changed since planning: ${op.target}`);
       if (op.source && op.action !== 'link' && await fingerprint(op.source, op.excludes) !== op.source_digest)
         throw new AicatlogError('SOURCE_CHANGED', `Source changed since planning: ${op.source}`);
@@ -134,6 +151,7 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       if (op.action !== 'remove' && await fingerprint(staging) !== row.expected_after) throw new AicatlogError('SOURCE_CHANGED', 'Staged contents differ from the prepared version.');
       row.state = 'staged'; await saveJson(journalPath, journal); await observe?.('staged', row);
       await mkdir(dirname(op.target), { recursive: true });
+      await checkGitProjection(op);
       if (await fingerprint(op.target) !== op.before) throw new AicatlogError('TARGET_CHANGED', `Target changed while staging: ${op.target}`);
       if (op.before !== null) {
         renameExclusive(op.target, backup);
@@ -146,6 +164,7 @@ export async function applyPlan(ctx: Context, input: unknown, recover = false, o
       if (await fingerprint(op.target) !== row.expected_after) throw new AicatlogError('POSTCONDITION_FAILED', `Target does not match plan: ${op.target}`);
     }
     if (!await complete()) throw new AicatlogError('POSTCONDITION_FAILED', 'A previously published target changed before batch completion.');
+    for (const op of plan.operations) await checkGitProjection(op);
     journal.status = 'applied'; await saveJson(journalPath, journal); await observe?.('journal_applied');
     return await finish();
   } catch (error) {

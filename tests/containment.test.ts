@@ -42,3 +42,9 @@ test('Skill file symlinks and nested manifests cannot expose external metadata',
   expect(catalog.errors.length).toBe(2);
   expect(catalog.errors.some(e => e.message.includes('Manifest file leaves'))).toBe(true);
 });
+test('ambiguous registration names cannot select a mutation owner implicitly', async () => {
+  const f = await fixture();
+  for (const id of ['one', 'two']) f.registry.skills.push({ id, name: 'duplicate', source: { kind: 'local', uri: 'source' }, target: 'skills/' + id, owner: 'aicatlog', state: 'active', activation: 'native', clients: [], metadata: {} });
+  await saveJson(f.ctx.registryPath, f.registry);
+  await expect(skillsPlan(f.ctx, 'remove', { id: 'duplicate' })).rejects.toMatchObject({ code: 'AMBIGUOUS_REGISTRATION' });
+});

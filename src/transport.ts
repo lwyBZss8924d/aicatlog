@@ -1,3 +1,4 @@
+import packageInfo from "../package.json";
 import { z } from 'zod';
 import { AicatlogError, type Context } from './types.ts';
 
@@ -36,7 +37,7 @@ export function openApi(commands: Map<string, TransportCommand>) {
       paths[route].get = { operationId: name.replaceAll(' ', '_') + `_get_${count}`, summary: command.description, parameters, responses: { '200': response, '400': { description: 'Invalid command input' } } };
     }
   }
-  return { openapi: '3.1.0', info: { title: 'aicatlog', version: '0.1.0' }, paths };
+  return { openapi: '3.1.0', info: { title: 'aicatlog', version: packageInfo.version }, paths };
 }
 
 export async function fetchCommand(commands: Map<string, TransportCommand>, ctx: Context, request: Request): Promise<Response> {

@@ -15,7 +15,7 @@ No MCP or permanent HTTP service. This is an initial development release.
 bun install --filter aicatlog
 bun run check
 bun tools/build.ts --tgrep-source /path/to/tgrep
-bun tools/install.ts --release dist/aicatlog-0.1.0-darwin-arm64
+bun tools/install.ts --release dist/aicatlog-0.1.1-darwin-arm64
 # Inspect the exact returned plan; use the built executable to apply it.
 dist/aicatlog apply --plan /path/to/prepared-plan.json
 ```

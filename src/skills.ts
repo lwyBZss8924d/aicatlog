@@ -25,10 +25,15 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
   const operations: Operation[] = [];
   const conflicts: string[] = [];
   const notes: string[] = [];
-  let selected = input.id ? registry.skills.find(s => s.id === input.id || s.name === input.id) : undefined;
+  let selected = input.id ? registry.skills.find(s => s.id === input.id) : undefined;
+  if (input.id && !selected) {
+    const matches = registry.skills.filter(s => s.name === input.id);
+    if (matches.length > 1) throw new AicatlogError('AMBIGUOUS_REGISTRATION', 'Select an exact registration id.', { ids: matches.map(s => s.id) });
+    selected = matches[0];
+  }
   if (input.id && !selected) throw new AicatlogError('REGISTRATION_NOT_FOUND', `No registered Skill ${input.id}`);
   if (['update', 'remove'].includes(action) && !selected) throw new AicatlogError('SELECTION_REQUIRED', 'Select one registered Skill.');
-  if (selected && selected.owner !== 'aicatlog') throw new AicatlogError('EXTERNAL_OWNER', `Use ${selected.owner} to modify this projection.`, { registration: selected.id, source: selected.source, metadata: selected.metadata });
+  if (selected && selected.owner !== 'aicatlog' && ['install', 'update', 'remove'].includes(action)) throw new AicatlogError('EXTERNAL_OWNER', `Use ${selected.owner} to modify this projection.`, { registration: selected.id, source: selected.source, metadata: selected.metadata });
   if (action === 'install' || action === 'update') {
     if (!selected && !input.source) throw new AicatlogError('SOURCE_REQUIRED', 'Supply a registered id or explicit source.');
     const source: Registration['source'] = selected?.source ?? (() => {

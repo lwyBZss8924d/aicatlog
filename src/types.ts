@@ -66,6 +66,7 @@ export const operationSchema = z.object({
   source: z.string().optional(), content: z.string().optional(), executable: z.boolean().optional(),
   before: z.string().nullable(), source_digest: z.string().optional(),
   excludes: z.array(z.string()).optional(),
+  git_root: z.string().optional(),
 });
 export const planSchema = z.object({
   schema_version: z.literal('aicatlog.plan.v1'), id: z.string(), created_at: z.string(),
