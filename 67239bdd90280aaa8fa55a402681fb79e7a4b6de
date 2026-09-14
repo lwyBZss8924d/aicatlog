@@ -4,7 +4,7 @@
   "phase": "R2",
   "slice": "runtime",
   "status": "implemented_and_verified",
-  "recorded_at_utc": "2026-09-14T12:03:32.441413+00:00",
+  "recorded_at_utc": "2026-09-14T12:04:04.537630+00:00",
   "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
   "primary_turn_id": "01a09f62-04bf-78a3-9cf4-243f8a3b0c91",
   "partner_sessions": [
@@ -202,5 +202,26 @@
     "Broad utility gain remains null.",
     "Final backup receipt is recorded separately; no full mirror success is implied."
   ],
-  "worktree_status": ""
+  "worktree_status": "",
+  "verification": [
+    {
+      "command": "bun test ./tests/bridge-sync.test.ts",
+      "phase": "red",
+      "result": "5 passed, 3 failed; reproduced relative-link, ancestor-link and dangling-source failures before the fix"
+    },
+    {
+      "assertions": 282,
+      "command": "bun run check",
+      "new_bridge_tests": 8,
+      "phase": "green",
+      "status": "pass",
+      "tests_failed": 0,
+      "tests_passed": 62
+    },
+    {
+      "command": "git diff --cached --check",
+      "status": "pass"
+    }
+  ],
+  "source_verification_receipt": "/Users/arthur/infra-ops/reports/generated/20260914T100637Z-astra-r2-admitted/aicatlog-012-source-pouw.json"
 }
