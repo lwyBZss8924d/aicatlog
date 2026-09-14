@@ -1,0 +1,16 @@
+{
+  "schema_version": "proof_of_useful_work.v1",
+  "commit": "2f081fe5774c937d06b5ce0b30f60f8054c30237",
+  "phase": "R2.1",
+  "status": "in_progress",
+  "outcome": "Imported the pinned Vercel Skills subtree for the minimal programmatic fork",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59"
+  ],
+  "validation": [
+    "upstream commit d667282815248da03a08a18272b5d2eef9caf77c inspected"
+  ],
+  "remote_push": false
+}
