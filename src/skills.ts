@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, realpath } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { cloneRepo, discover, parseSource } from '@aicatlog/skills-core';
 import { AicatlogError, registrationSchema, type Context, type Registration, type Operation } from './types.ts';
@@ -85,9 +85,10 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
         if (skill.clients.length && !skill.clients.includes(String(client.id))) continue;
         const target = join(root, String(skill.metadata.bridge_name ?? basename(expand(skill.target!, registryBase))));
         const source = expand(skill.target!, registryBase);
-        if (!await fingerprint(source)) { conflicts.push(`Missing projection source: ${source}`); continue; }
+        const sourceIdentity = await realpath(source).catch(() => null);
+        if (sourceIdentity === null) { conflicts.push(`Missing projection source: ${source}`); continue; }
         const existing = await fingerprint(target);
-        if (existing === `link:${source}`) continue;
+        if (existing !== null && await realpath(target).catch(() => null) === sourceIdentity) continue;
         if (existing !== null) { conflicts.push(`Foreign or changed bridge: ${target}`); continue; }
         operations.push(await operation('link', target, { source }));
       }
