@@ -3,6 +3,9 @@ import type {
   OperationObject,
   ParameterObject,
   PathItemObject,
+  ResponsesObject,
+  ResponseObject,
+  SchemaObject,
 } from '@scalar/openapi-types/3.2'
 import { z } from 'zod'
 
@@ -256,7 +259,7 @@ function requestBody(method: HttpMethod, schema?: Record<string, unknown> | unde
   }
 }
 
-function responses(schema?: Record<string, unknown> | undefined) {
+function responses(schema?: Record<string, unknown> | undefined): ResponsesObject {
   return {
     '200': {
       description: 'Command completed successfully.',
@@ -279,7 +282,7 @@ function responses(schema?: Record<string, unknown> | undefined) {
   }
 }
 
-function errorResponse(description: string) {
+function errorResponse(description: string): ResponseObject {
   return {
     description,
     content: {
@@ -306,7 +309,7 @@ function errorResponse(description: string) {
   }
 }
 
-function metaSchema() {
+function metaSchema(): SchemaObject {
   return {
     type: 'object',
     required: ['command', 'duration'],

@@ -1,0 +1,11 @@
+{
+  "schema_version": "aicatlog.resources.v1",
+  "resources": [
+    {"id":"usage","path":"usage.txt","kind":"document","when":"Discover, search, mutate or embed aicatlog","topics":[
+      {"id":"discover","begin":"BEGIN_TOPIC discover","end":"END_TOPIC discover"},
+      {"id":"search","begin":"BEGIN_TOPIC search","end":"END_TOPIC search"},
+      {"id":"mutate","begin":"BEGIN_TOPIC mutate","end":"END_TOPIC mutate"},
+      {"id":"api","begin":"BEGIN_TOPIC api","end":"END_TOPIC api"}
+    ]}
+  ]
+}

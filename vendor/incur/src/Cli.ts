@@ -424,7 +424,7 @@ export function create(
         description: def.description,
         envSchema: def.env,
         globals: globalsDesc,
-        mcpHandler,
+        // aicatlog distribution: no MCP transport is exposed.
         middlewares,
         name,
         rootCommand: rootDef,
@@ -1237,7 +1237,7 @@ async function serveImpl(
   }
 
   // mcp add/doctor: register or smoke-test CLI MCP server integration.
-  const mcpIdx = builtinIdx(filtered, name, 'mcp')
+  const mcpIdx = -1 // aicatlog distribution: MCP registration is disabled.
   if (mcpIdx !== -1) {
     const builtin = findBuiltin('mcp')!
     const mcpSub = filtered[mcpIdx + 1]
@@ -2193,7 +2193,12 @@ async function fetchImpl(
   const start = performance.now()
 
   const url = new URL(req.url)
-  const segments = url.pathname.split('/').filter(Boolean)
+  let segments: string[]
+  try {
+    segments = url.pathname.split('/').filter(Boolean).map(decodeURIComponent)
+  } catch {
+    return Response.json({ ok: false, error: { code: 'INVALID_PATH', message: 'Malformed URL path encoding.' } }, { status: 400 })
+  }
 
   // OpenAPI discovery: route /openapi.json, /openapi.yml, /openapi.yaml, and /.well-known/openapi.json
   if (req.method === 'GET' && isOpenapiRoute(segments)) {
@@ -2800,10 +2805,14 @@ function extractBuiltinFlags(argv: string[], options: extractBuiltinFlags.Option
 
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i]!
+    if (token === '--') {
+      rest.push(...argv.slice(i))
+      break
+    }
     if (token === '--full-output') fullOutput = true
     else if (token === '--llms') llms = true
     else if (token === '--llms-full') llmsFull = true
-    else if (token === '--mcp') mcp = true
+    else if (token === '--mcp') throw new ParseError({ message: 'MCP is not exposed by this distribution.' })
     else if (token === '--help' || token === '-h') help = true
     else if (token === '--update') update = true
     else if (token === Update.checkFlag) updateCheck = true

@@ -1,0 +1,46 @@
+{"schema_version":"aicatlog.text.v1","id":"usage","kind":"document","when":"Use the CLI, SDK, resource manifests or session indexes"}
+
+BEGIN_TOPIC discover
+aicatlog catalog
+aicatlog list --kind skill --limit 10 --json
+aicatlog find "repository setup" --json
+aicatlog get <qualified-id> --json
+aicatlog read <qualified-id> --section <topic-id> --json
+
+Metadata navigation does not load every Skill body. A qualified ID identifies one
+resource even when names repeat. Sources and cached structural indexes are distinct.
+Use index refresh after changing the resource corpus outside the owner commands.
+END_TOPIC discover
+
+BEGIN_TOPIC search
+aicatlog find "literal text" --content --scope <scope-id> --json
+aicatlog find "regular.*expression" --content --scope <scope-id> --regex --json
+aicatlog find "just edited" --content --scope <scope-id> --fresh --json
+
+Content search uses a session-managed tgrep backend. The response reports its route,
+freshness, scope and any fallback. Indexed results are eventually consistent; use
+fresh searches for current absence and edit checks. Exact source reads bypass indexes.
+Index status does not renew a lease. Stop releases the caller's lease; workers exit
+when no active leases or queries remain. The default idle lease is 15 minutes.
+END_TOPIC search
+
+BEGIN_TOPIC mutate
+Skills install/update/remove/sync/normalize and harness bootstrap prepare plans.
+aicatlog apply --plan <prepared-plan-file>
+
+Apply checks the prepared registry, source and target fingerprints. Changed targets
+require a new plan. The run directory retains backups, a journal and a receipt.
+Use --recover only for the exact interrupted plan with an exited writer.
+External source owners are reported explicitly; generic installation does not replace
+an owner kit's workflow or Hook registrations.
+END_TOPIC mutate
+
+BEGIN_TOPIC api
+The Bun SDK exports createAicatlog(options, extensions), call, serve and fetch.
+CLI and SDK commands share validation and implementation. Fetch returns JSON envelopes
+and exposes /openapi.json. It does not start an HTTP service or expose MCP.
+Structured CLI input uses --input with JSON, @file or stdin. JSON values override
+corresponding positional/options. Global runtime configuration remains separate.
+--full-output selects the result envelope; read selects source content. Use structural
+pagination, not token slicing, to keep machine output intact.
+END_TOPIC api

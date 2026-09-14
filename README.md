@@ -9,5 +9,6 @@ session-managed tgrep indexes accelerate full-text search.
 Built with Bun, TypeScript and Incur. TOON and JSON output, progressive help,
 OpenAPI/Fetch and a minimal Skills fork. No MCP.
 
-Implementation and usage documentation are being built with the R2 milestones in
-`SPEC.md`. Run `bun install` to prepare the development dependencies.
+See `SPEC.md` for the product contract. Run `bun install` to prepare development
+dependencies. Workstation paths, resource ownership and integrations are configured
+in a user or repository registry, outside the generic engine.

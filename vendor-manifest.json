@@ -1,0 +1,34 @@
+{
+  "schema_version": "aicatlog.vendor.v1",
+  "sources": [
+    {
+      "id": "incur",
+      "upstream": "https://github.com/wevm/incur",
+      "commit": "f617e17073a4fc972d9c9330e6e623a024f6c626",
+      "path": "vendor/incur",
+      "reason": "operator-selected latest clone; source version not published on npm",
+      "patches": [
+        "source exports",
+        "No MCP runtime and discovery"
+      ]
+    },
+    {
+      "id": "skills",
+      "upstream": "https://github.com/vercel-labs/skills",
+      "commit": "d667282815248da03a08a18272b5d2eef9caf77c",
+      "path": "vendor/skills",
+      "patches": [
+        "programmatic entrypoint",
+        "qualified discovery",
+        "explicit targets; no interactive installer execution"
+      ]
+    },
+    {
+      "id": "tgrep",
+      "upstream": "https://github.com/microsoft/tgrep",
+      "commit": "b1d0fc2f6245cc78f1943e5864ceeab812452404",
+      "version": "1.0.8",
+      "integration": "external process and loopback protocol"
+    }
+  ]
+}

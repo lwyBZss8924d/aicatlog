@@ -381,7 +381,7 @@ export const shells = ['bash', 'fish', 'nushell', 'zsh'] as const
 export type Shell = (typeof shells)[number]
 
 /** Built-in command metadata shared by help, completions, and handler logic. */
-export const builtinCommands = [
+const allBuiltinCommands = [
   {
     name: 'completions',
     description: 'Generate shell completion script',
@@ -459,6 +459,9 @@ export const builtinCommands = [
   hint?: ((name: string) => string) | undefined
   subcommands?: (BuiltinSubcommandMeta<z.ZodObject<any>> & { name: string })[] | undefined
 }[]
+
+/** aicatlog distribution omits MCP from runtime discovery and completions. */
+export const builtinCommands = allBuiltinCommands.filter(command => command.name !== 'mcp')
 
 /** @internal Finds a builtin command by its name or alias. */
 export function findBuiltin(token: string) {

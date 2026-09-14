@@ -420,16 +420,12 @@ function globalOptionsLines(
     { flag: '--format <toon|json|yaml|md|jsonl>', desc: 'Output format' },
     { flag: '--help', desc: 'Show help' },
     { flag: '--llms, --llms-full', desc: 'Print LLM-readable manifest' },
-    ...(root ? [{ flag: '--mcp', desc: 'Start as MCP stdio server' }] : []),
     ...(configFlag
       ? [{ flag: `--no-${configFlag}`, desc: 'Disable JSON option defaults for this run' }]
       : []),
     { flag: '--schema', desc: 'Show JSON Schema for command' },
     { flag: '--token-count', desc: 'Print token count of output (instead of output)' },
-    { flag: '--token-limit <n>', desc: 'Limit output to n tokens' },
-    { flag: '--token-offset <n>', desc: 'Skip first n tokens of output' },
     { flag: '--full-output', desc: 'Show full output envelope' },
-    ...(root ? [{ flag: '--update', desc: 'Update to latest version' }] : []),
     ...(root ? [{ flag: '--version', desc: 'Show version' }] : []),
   ].sort((a, b) => a.flag.localeCompare(b.flag))
   const maxLen = Math.max(...flags.map((f) => f.flag.length))
