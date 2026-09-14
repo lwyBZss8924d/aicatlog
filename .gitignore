@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.cache/
+.local/
+coverage/
+*.tgz
+workspace/runs/
+workspace/handoff/
+workspace/tasks/artifacts/
+config.local.json
+.env
+.env.*
+!.env.example
