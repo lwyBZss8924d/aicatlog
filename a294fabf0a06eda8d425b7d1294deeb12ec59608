@@ -1,0 +1,17 @@
+{
+  "schema_version": "proof_of_useful_work.v1",
+  "commit": "a294fabf0a06eda8d425b7d1294deeb12ec59608",
+  "phase": "R2-projection-repair",
+  "status": "in_progress",
+  "outcome": "Centralize Git and containment postconditions for all successful return paths; prevent normalization across external ownership",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59"
+  ],
+  "validation": [
+    "bun run check: 50 tests pass and typecheck pass",
+    "Post-publication nonignored, tracked and nested-root drift is refused by recovery and receipt reuse"
+  ],
+  "remote_push": false
+}
