@@ -1,1 +1,206 @@
-{"axes": {"checks": "pass", "implementation": "complete", "independent_audit": "pending_parent"}, "changed_paths": ["src/skills.ts", "tests/bridge-sync.test.ts", "package.json"], "identity_provenance": "Primary IDs supplied by the supervising task; no worker native ID inferred.", "invariants": ["Equal-content distinct directories remain conflicts", "Foreign links and dangling source/target aliases remain conflicts", "Absent selected target creation remains a link operation", "No additional write roots are granted", "External source and registry ownership are preserved"], "limits": ["No build, install or push performed", "Packaging and independent audit remain with the parent"], "outcome": "Global Skills sync preserves existing relative links and ancestor collection links only when successful realpath identity equals the selected source.", "partner_sessions": [{"identity_status": "native_id_not_verified", "role": "implementation_worker", "session_id": null}], "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59", "primary_turn_id": "01a09f62-04bf-78a3-9cf4-243f8a3b0c91", "recorded_at_utc": "2026-09-14T11:41:40.363097+00:00", "schema_version": "aicatlog.pouw.v1", "source_raw_session_ids": ["01a09a69-f936-7260-bc8e-797f4e160b59"], "source_revision": "67239bdd90280aaa8fa55a402681fb79e7a4b6de", "verification": [{"command": "bun test ./tests/bridge-sync.test.ts", "phase": "red", "result": "5 passed, 3 failed; reproduced relative-link, ancestor-link and dangling-source failures before the fix"}, {"assertions": 282, "command": "bun run check", "new_bridge_tests": 8, "phase": "green", "status": "pass", "tests_failed": 0, "tests_passed": 62}, {"command": "git diff --cached --check", "status": "pass"}], "version": "0.1.2"}
+{
+  "schema_version": "pouw.v1",
+  "commit": "67239bdd90280aaa8fa55a402681fb79e7a4b6de",
+  "phase": "R2",
+  "slice": "runtime",
+  "status": "implemented_and_verified",
+  "recorded_at_utc": "2026-09-14T12:03:32.441413+00:00",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "primary_turn_id": "01a09f62-04bf-78a3-9cf4-243f8a3b0c91",
+  "partner_sessions": [
+    {
+      "role": "independent_aicatlog_migration_auditor",
+      "session_id": "01a09f2a-2435-7193-a9ae-0d8528cd6833",
+      "physical_home": "codex-test"
+    },
+    {
+      "role": "independent_self_goal_auditor",
+      "session_id": "01a09f66-2160-7eb2-8a24-79f4304c8e41",
+      "physical_home": "codex-test"
+    },
+    {
+      "role": "evaluation_D1-main-baseline",
+      "session_id": "01a09fa9-60a6-7881-bef7-2327de047725",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_D1-main-candidate",
+      "session_id": "01a09fa9-6089-7621-a95c-9546ad21ba43",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_D1-test-baseline",
+      "session_id": "01a09fa9-742b-7442-b128-e0a73399a574",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_D1-test-candidate",
+      "session_id": "01a09fa9-742b-7bb1-af59-ccacea4cd151",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_D2-main-baseline",
+      "session_id": "01a09fab-0167-79f2-887a-da4c94db3df3",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_D2-main-candidate",
+      "session_id": "01a09fab-04d8-7451-9b2e-1c3b3a8e6949",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_D2-test-baseline",
+      "session_id": "01a09fab-0907-7793-a623-1099a6981158",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_D2-test-candidate",
+      "session_id": "01a09fab-2998-7440-8dde-7504f7f9cfed",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_D3-main-baseline",
+      "session_id": "01a09fab-ee58-7a93-b067-cf935f7b2db3",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_D3-main-candidate",
+      "session_id": "01a09fab-f3da-7f62-b9f8-016615b0d495",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_D3-test-baseline",
+      "session_id": "01a09fac-0392-7dd0-9318-f3fc09335898",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_D3-test-candidate",
+      "session_id": "01a09fac-1d7d-7b31-95b1-1ff598234983",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_D4-main-baseline",
+      "session_id": "01a09fae-277a-7b83-b363-1bfd2348925b",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_D4-main-candidate",
+      "session_id": "01a09fae-6667-7970-804c-41988faa800b",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_D4-test-baseline",
+      "session_id": "01a09fae-7323-7660-b5a5-bb03f4cfd496",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_D4-test-candidate",
+      "session_id": "01a09fae-c671-7061-9d1e-32798d0fa8c2",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_H1-main-baseline",
+      "session_id": "01a09fb2-1a29-7380-aff8-acb5a62201e6",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_H1-main-candidate",
+      "session_id": "01a09fb2-1a5b-75f0-8899-c612247c0117",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_H1-test-baseline",
+      "session_id": "01a09fb2-1a8f-7672-ba29-48c9ff438562",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_H1-test-candidate",
+      "session_id": "01a09fb2-1a8f-7323-a730-1f873b2f1178",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_H2-main-baseline",
+      "session_id": "01a09fb2-c66b-76b0-ab34-eb0ea78cd4d5",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_H2-main-candidate",
+      "session_id": "01a09fb3-0d5d-7c03-8f33-66212014bae0",
+      "physical_home": "main"
+    },
+    {
+      "role": "evaluation_H2-test-baseline",
+      "session_id": "01a09fb3-5e7d-7683-af5c-82f904b0be23",
+      "physical_home": "test"
+    },
+    {
+      "role": "evaluation_H2-test-candidate",
+      "session_id": "01a09fb3-666c-7df3-b41e-ed8225fb05e2",
+      "physical_home": "test"
+    },
+    {
+      "role": "continuation_main",
+      "session_id": "01a09fbf-9f47-7360-88a0-03c959210b74",
+      "physical_home": "main"
+    },
+    {
+      "role": "continuation_test",
+      "session_id": "01a09fbf-a805-7cb3-bc48-a5ee56c13c34",
+      "physical_home": "test"
+    }
+  ],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59",
+    "01a09f2a-2435-7193-a9ae-0d8528cd6833",
+    "01a09f66-2160-7eb2-8a24-79f4304c8e41",
+    "01a09fa9-60a6-7881-bef7-2327de047725",
+    "01a09fa9-6089-7621-a95c-9546ad21ba43",
+    "01a09fa9-742b-7442-b128-e0a73399a574",
+    "01a09fa9-742b-7bb1-af59-ccacea4cd151",
+    "01a09fab-0167-79f2-887a-da4c94db3df3",
+    "01a09fab-04d8-7451-9b2e-1c3b3a8e6949",
+    "01a09fab-0907-7793-a623-1099a6981158",
+    "01a09fab-2998-7440-8dde-7504f7f9cfed",
+    "01a09fab-ee58-7a93-b067-cf935f7b2db3",
+    "01a09fab-f3da-7f62-b9f8-016615b0d495",
+    "01a09fac-0392-7dd0-9318-f3fc09335898",
+    "01a09fac-1d7d-7b31-95b1-1ff598234983",
+    "01a09fae-277a-7b83-b363-1bfd2348925b",
+    "01a09fae-6667-7970-804c-41988faa800b",
+    "01a09fae-7323-7660-b5a5-bb03f4cfd496",
+    "01a09fae-c671-7061-9d1e-32798d0fa8c2",
+    "01a09fb2-1a29-7380-aff8-acb5a62201e6",
+    "01a09fb2-1a5b-75f0-8899-c612247c0117",
+    "01a09fb2-1a8f-7672-ba29-48c9ff438562",
+    "01a09fb2-1a8f-7323-a730-1f873b2f1178",
+    "01a09fb2-c66b-76b0-ab34-eb0ea78cd4d5",
+    "01a09fb3-0d5d-7c03-8f33-66212014bae0",
+    "01a09fb3-5e7d-7683-af5c-82f904b0be23",
+    "01a09fb3-666c-7df3-b41e-ed8225fb05e2",
+    "01a09fbf-9f47-7360-88a0-03c959210b74",
+    "01a09fbf-a805-7cb3-bc48-a5ee56c13c34"
+  ],
+  "outcome": "Bun0.1.2 CLI/SDK and bridge compatibility delivered with fixed source and relocated package checks.",
+  "evidence": {
+    "validation-evidence.json": "/Users/arthur/infra-ops/reports/generated/20260914T100637Z-astra-r2-admitted/validation-evidence.json",
+    "live-migration-verification.json": "/Users/arthur/infra-ops/reports/generated/20260914T100637Z-astra-r2-admitted/live-migration-verification.json",
+    "cohort-outcome.json": "/Users/arthur/infra-ops/reports/generated/20260914T100637Z-astra-r2-admitted/cohort-outcome.json",
+    "continuation/outcome.json": "/Users/arthur/infra-ops/reports/generated/20260914T100637Z-astra-r2-admitted/continuation/outcome.json",
+    "final-migration-original-verdict.json": "/Users/arthur/infra-ops/reports/generated/20260914T100637Z-astra-r2-admitted/final-migration-original-verdict.json",
+    "aicatlog-012-relocated-verification.json": "/Users/arthur/infra-ops/reports/generated/20260914T100637Z-astra-r2-admitted/aicatlog-012-relocated-verification.json"
+  },
+  "independent_acceptance": "accept_with_followups;3/3coverage;Codex-test;no fallback",
+  "preserved": [
+    "Unrelated dirty Composer Markdown",
+    "Paused native Goals and frozen trials",
+    "MemCell live state",
+    "Existing Hook/workflow projection drift"
+  ],
+  "limits": [
+    "One upstream example remains a visible catalogue diagnostic.",
+    "24-instance cohort evaluated0.1.1d123;0.1.2fix has separate62-test/typecheck and relocated package evidence.",
+    "Broad utility gain remains null.",
+    "Final backup receipt is recorded separately; no full mirror success is implied."
+  ],
+  "worktree_status": ""
+}
