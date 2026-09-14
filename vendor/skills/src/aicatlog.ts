@@ -51,6 +51,10 @@ export async function discover(root: string, options: { excludes?: string[]; lin
       const path = join(directory, entry.name);
       const actual = entry.isSymbolicLink() ? await stat(path).catch(() => null) : entry;
       if (entry.name === 'SKILL.md' && actual?.isFile()) {
+        const canonical = await realpath(path);
+        if (!allowed.some(base => { const rel = relative(base, canonical); return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)); })) {
+          errors.push({ path, message: 'Metadata file link leaves declared discovery roots' }); continue;
+        }
         try { const skill = await readSkill(path); skills.push({ ...skill, relativePath: relative(root, path) }); }
         catch (error) { errors.push({ path, message: String(error) }); }
       } else if (actual?.isDirectory()) await walk(path);

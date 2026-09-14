@@ -20,6 +20,7 @@ async function materialize(ctx: Context, source: Registration['source']) {
 
 export async function skillsPlan(ctx: Context, action: string, input: { id?: string; source?: string; skill?: string; scope?: string; target?: string; client?: string }) {
   const registry = await loadRegistry(ctx);
+  const registryBase = dirname(ctx.registryPath);
   const roots: string[] = [dirname(ctx.registryPath)];
   const operations: Operation[] = [];
   const conflicts: string[] = [];
@@ -42,8 +43,8 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
     const skill = choices[0]!;
     const scope = registry.scopes.find(s => s.id === (input.scope ?? selected?.metadata.scope ?? registry.settings.default_skill_scope));
     if (!scope && !selected?.target) throw new AicatlogError('SCOPE_REQUIRED', 'Select a registered installation scope.');
-    const scopeRoot = scope ? expand(scope.root, dirname(ctx.registryPath)) : expand(String(registry.settings.skills_root));
-    const target = expand(input.target ?? selected?.target ?? join(scopeRoot, skill.name.replace(/[^a-zA-Z0-9._-]/g, '-')));
+    const scopeRoot = scope ? expand(scope.root, registryBase) : expand(String(registry.settings.skills_root), registryBase);
+    const target = input.target ? expand(input.target) : selected?.target ? expand(selected.target, registryBase) : join(scopeRoot, skill.name.replace(/[^a-zA-Z0-9._-]/g, '-'));
     if (!inside(scopeRoot, target)) throw new AicatlogError('OUTSIDE_SCOPE', 'Installation target is outside its registered scope.');
     roots.push(scopeRoot);
     const sourceDirectory = dirname(skill.path);
@@ -61,19 +62,24 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
     notes.push('Source content and installation target are bound by the prepared fingerprints.');
   } else if (action === 'remove') {
     if (!selected!.target) throw new AicatlogError('NO_INSTALLATION', 'Registration has no target.');
-    roots.push(dirname(expand(selected!.target!)));
-    operations.push(await operation('remove', selected!.target!)); selected!.state = 'archived';
+    const target = expand(selected!.target!, registryBase);
+    const candidates = registry.scopes.filter(s => (!selected!.metadata.scope || s.id === selected!.metadata.scope) &&
+      s.kind === 'skills' && inside(expand(s.root, registryBase), target));
+    const scope = candidates.length === 1 ? candidates[0] : undefined;
+    if (!scope) throw new AicatlogError('OUTSIDE_SCOPE', 'Removal target must belong to one declared Skills scope.');
+    roots.push(expand(scope.root, registryBase));
+    operations.push(await operation('remove', target)); selected!.state = 'archived';
     notes.push('Original content is retained in the apply receipt backup.');
   } else if (action === 'sync') {
     const clients = registry.clients.filter(c => !input.client || c.id === input.client);
     if (input.client && clients.length !== 1) throw new AicatlogError('CLIENT_NOT_FOUND', `Unknown client ${input.client}`);
     for (const client of clients) {
       if (client.mode === 'native') { notes.push(`${client.id}: native shared discovery; no mirror`); continue; }
-      const root = expand(String(client.root)); roots.push(root);
+      const root = expand(String(client.root), registryBase); roots.push(root);
       for (const skill of registry.skills.filter(s => s.state === 'active' && s.target && (!selected || s.id === selected.id))) {
         if (skill.clients.length && !skill.clients.includes(String(client.id))) continue;
-        const target = join(root, String(skill.metadata.bridge_name ?? basename(expand(skill.target!))));
-        const source = expand(skill.target!);
+        const target = join(root, String(skill.metadata.bridge_name ?? basename(expand(skill.target!, registryBase))));
+        const source = expand(skill.target!, registryBase);
         if (!await fingerprint(source)) { conflicts.push(`Missing projection source: ${source}`); continue; }
         const existing = await fingerprint(target);
         if (existing === `link:${source}`) continue;
@@ -82,7 +88,7 @@ export async function skillsPlan(ctx: Context, action: string, input: { id?: str
       }
     }
   } else if (action === 'normalize') {
-    const root = expand(String(registry.settings.skills_root)); roots.push(root);
+    const root = expand(String(registry.settings.skills_root), registryBase); roots.push(root);
     for (const rule of registry.normalization_rules) {
       const source = join(root, String(rule.source_relative)), target = join(root, String(rule.target_relative));
       if (!await fingerprint(source)) continue;
@@ -98,6 +104,6 @@ export async function skillsStatus(ctx: Context) {
   const registry = await loadRegistry(ctx);
   const items = await Promise.all(registry.skills.map(async skill => ({ id: skill.id, name: skill.name, owner: skill.owner,
     state: skill.state, activation: skill.activation, target: skill.target ?? null,
-    observed: skill.target ? (await fingerprint(expand(skill.target))) !== null ? 'present' : 'missing' : 'not_installed' })));
+    observed: skill.target ? (await fingerprint(expand(skill.target, dirname(ctx.registryPath)))) !== null ? 'present' : 'missing' : 'not_installed' })));
   return { items, issues: items.filter(x => x.state === 'active' && x.target && x.observed === 'missing'), total: items.length };
 }

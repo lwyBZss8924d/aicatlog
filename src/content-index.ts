@@ -23,7 +23,7 @@ async function configuration(ctx: Context, scopeId: string): Promise<WorkerConfi
   let tgrep: string | undefined;
   for (const candidate of candidates) if (candidate && await access(expand(candidate)).then(() => true, () => false)) { tgrep = expand(candidate); break; }
   if (!tgrep) throw new AicatlogError('BACKEND_UNAVAILABLE', 'Configure the tgrep executable or install the release backend.', { backend: 'tgrep' });
-  const key = sha(JSON.stringify({ root, excludes: scope.excludes, hidden: scope.hidden, max: scope.max_file_bytes, ignore: scope.no_require_git, backend: tgrep }));
+  const key = sha(JSON.stringify({ root, ownership_domain: ctx.stateRoot, excludes: scope.excludes, hidden: scope.hidden, max: scope.max_file_bytes, ignore: scope.no_require_git, backend: tgrep }));
   return { schema_version: 'aicatlog.index-worker.v1', root, scope, tgrep,
     indexDir: join(ctx.cacheRoot, 'tgrep', key), runtimeDir: join(ctx.stateRoot, 'index-workers', key) };
 }

@@ -2,12 +2,50 @@
   "schema_version": "aicatlog.profile.v1",
   "id": "foundation",
   "files": [
-    {"path":"AGENTS.md","content":"# {{repo_name}}\n\nOwn the authorized task through implementation, proportionate validation and delivery.\nUse SPEC.md for the project contract and aicatlog-manifest.json for resource routing.\nRead only applicable workflow topics. Preserve unrelated work.\n\nUse workspace/harness-config for portable specs and templates, and workspace/harness-tooling for execution entrypoints.\nTask results and handoffs belong in their declared local workspace locations.\nDo not treat a checkpoint, successful process or generated artifact as acceptance.\n"},
-    {"path":"SPEC.md","content":"# {{repo_name}}\n\nRecord the project's purpose, public interfaces and acceptance criteria here.\nThe foundation supplies resource routing, work records and validation entrypoints.\nSelect project-specific tools and optional integrations in aicatlog-manifest.json.\n"},
-    {"path":"aicatlog-manifest.json","content":"{\n  \"schema_version\": \"aicatlog.registry.v1\",\n  \"scopes\": [{\"id\": \"project\", \"root\": \".\", \"kind\": \"repo\", \"manifests\": [\"workspace/harness-config/resource-manifest.json\"]}],\n  \"skills\": [],\n  \"resources\": [],\n  \"settings\": {}\n}\n"},
-    {"path":"workspace/harness-config/resource-manifest.json","content":"{\n  \"schema_version\": \"aicatlog.resources.v1\",\n  \"resources\": [\n    {\"id\": \"workflow\", \"kind\": \"workflow\", \"path\": \"workflow.txt\", \"when\": \"Plan, implement, validate or hand off project work\"},\n    {\"id\": \"checkpoint-template\", \"path\": \"templates/checkpoint.json\", \"when\": \"Record a continuation cursor\"}\n  ]\n}\n"},
-    {"path":"workspace/harness-config/workflow.txt","content":"{\"schema_version\":\"aicatlog.text.v1\",\"id\":\"workflow\",\"kind\":\"workflow\",\"when\":\"Project execution and continuation\"}\n\nBEGIN_TOPIC execute\nState the useful outcome and allowed effects. Inspect current authority and worktree.\nImplement the smallest coherent change and run the checks affected by it.\nKeep optional research, independent review and release approval tied to their actual scope.\nEND_TOPIC execute\n\nBEGIN_TOPIC deliver\nRecord source revision, actual validation, artifacts, unresolved issues and next action.\nCommit intended changes, attach machine-readable PoUW and verify Git state.\nUse workspace/tasks/artifacts for evidence and workspace/handoff for continuation.\nKeep session identity, process success, task success and required acceptance distinct.\nEND_TOPIC deliver\n"},
-    {"path":"workspace/harness-config/templates/checkpoint.json","content":"{\n  \"schema_version\": \"aicatlog.checkpoint.v1\",\n  \"objective\": \"\",\n  \"status\": \"in_progress\",\n  \"source_revision\": null,\n  \"primary_session_id\": null,\n  \"partner_sessions\": [],\n  \"completed\": [],\n  \"evidence\": [],\n  \"unresolved\": [],\n  \"next_action\": \"\"\n}\n"},
-    {"path":"workspace/harness-tooling/repo-harness-cli","executable":true,"content":"#!/usr/bin/env sh\nrepo_root=$(CDPATH= cd -- \"$(dirname -- \"$0\")/../..\" && pwd) || exit 1\nexec aicatlog harness check --repo \"$repo_root\" \"$@\"\n"}
+    {
+      "path": "AGENTS.md",
+      "content": "# {{repo_name}}\n\nOwn the authorized task through implementation, proportionate validation and delivery.\nUse SPEC.md for the project contract and aicatlog-manifest.json for resource routing.\nRead only applicable workflow topics. Preserve unrelated work.\n\nUse workspace/harness-config for portable specs and templates, and workspace/harness-tooling for execution entrypoints.\nTask results and handoffs belong in their declared local workspace locations.\nDo not treat a checkpoint, successful process or generated artifact as acceptance.\n"
+    },
+    {
+      "path": "SPEC.md",
+      "content": "# {{repo_name}}\n\nRecord the project's purpose, public interfaces and acceptance criteria here.\nThe foundation supplies resource routing, work records and validation entrypoints.\nSelect project-specific tools and optional integrations in aicatlog-manifest.json.\n"
+    },
+    {
+      "path": "aicatlog-manifest.json",
+      "content": "{\n  \"schema_version\": \"aicatlog.registry.v1\",\n  \"scopes\": [\n    {\n      \"id\": \"project\",\n      \"root\": \".\",\n      \"kind\": \"repo\",\n      \"manifests\": [\n        \"workspace/harness-config/resource-manifest.json\"\n      ],\n      \"excludes\": [\n        \".git\",\n        \"vendor\",\n        \"node_modules\",\n        \"target\",\n        \"dist\",\n        \".cache\",\n        \".local\",\n        \"runs\",\n        \"handoff\",\n        \"artifacts\"\n      ]\n    }\n  ],\n  \"skills\": [],\n  \"resources\": [],\n  \"settings\": {}\n}\n"
+    },
+    {
+      "path": "workspace/harness-config/resource-manifest.json",
+      "content": "{\n  \"schema_version\": \"aicatlog.resources.v1\",\n  \"resources\": [\n    {\"id\": \"workflow\", \"kind\": \"workflow\", \"path\": \"workflow.txt\", \"when\": \"Plan, implement, validate or hand off project work\"},\n    {\"id\": \"checkpoint-template\", \"path\": \"templates/checkpoint.json\", \"when\": \"Record a continuation cursor\"}\n  ]\n}\n"
+    },
+    {
+      "path": "workspace/harness-config/workflow.txt",
+      "content": "{\"schema_version\":\"aicatlog.text.v1\",\"id\":\"workflow\",\"kind\":\"workflow\",\"when\":\"Project execution and continuation\"}\n\nBEGIN_TOPIC execute\nState the useful outcome and allowed effects. Inspect current authority and worktree.\nImplement the smallest coherent change and run the checks affected by it.\nKeep optional research, independent review and release approval tied to their actual scope.\nEND_TOPIC execute\n\nBEGIN_TOPIC deliver\nRecord source revision, actual validation, artifacts, unresolved issues and next action.\nCommit intended changes, attach machine-readable PoUW and verify Git state.\nUse workspace/tasks/artifacts for evidence and workspace/handoff for continuation.\nKeep session identity, process success, task success and required acceptance distinct.\nEND_TOPIC deliver\n"
+    },
+    {
+      "path": "workspace/harness-config/templates/checkpoint.json",
+      "content": "{\n  \"schema_version\": \"aicatlog.checkpoint.v1\",\n  \"objective\": \"\",\n  \"status\": \"in_progress\",\n  \"source_revision\": null,\n  \"primary_session_id\": null,\n  \"partner_sessions\": [],\n  \"completed\": [],\n  \"evidence\": [],\n  \"unresolved\": [],\n  \"next_action\": \"\"\n}\n"
+    },
+    {
+      "path": "workspace/harness-tooling/repo-harness-cli",
+      "executable": true,
+      "content": "#!/usr/bin/env sh\nrepo_root=$(CDPATH= cd -- \"$(dirname -- \"$0\")/../..\" && pwd) || exit 1\nexec aicatlog harness check --repo \"$repo_root\" \"$@\"\n"
+    },
+    {
+      "path": ".gitignore",
+      "content": "# aicatlog local runtime\n.env\n.env.*\n!.env.example\n.cache/\n.local/\nworkspace/runs/\nworkspace/handoff/\nworkspace/tasks/artifacts/\n"
+    },
+    {
+      "path": "workspace/harness-config/harness-contract.json",
+      "content": "{\n  \"schema_version\": \"aicatlog.harness.v1\",\n  \"resources\": \"resource-manifest.json\",\n  \"workspaces\": {\n    \"issues\": \"workspace/issues\",\n    \"tasks\": \"workspace/tasks\",\n    \"plans\": \"workspace/exec-plans\",\n    \"evidence\": \"workspace/tasks/artifacts\",\n    \"handoff\": \"workspace/handoff\",\n    \"runs\": \"workspace/runs\"\n  },\n  \"record_format\": \"JSON metadata first line and focused plain text\",\n  \"optional_integrations\": []\n}\n"
+    },
+    {
+      "path": "workspace/harness-config/work-records.txt",
+      "content": "{\"schema_version\":\"aicatlog.text.v1\",\"id\":\"work-records\",\"kind\":\"document\",\"when\":\"Create and continue project work records\"}\n\nBEGIN_TOPIC records\nUse stable IDs, owner, state, objective, acceptance criteria, source references and next action.\nState is planned, active, blocked, done or cancelled. A done record needs actual acceptance evidence.\nCreate task records only when ownership or continuation benefits from them.\nUse workspace/issues, workspace/tasks and workspace/exec-plans for the corresponding records.\nKeep runtime evidence under workspace/tasks/artifacts and handoffs under workspace/handoff.\nThese are created when work needs them; an empty project does not need placeholder tasks.\nEND_TOPIC records\n\nBEGIN_TOPIC continuation\nA checkpoint binds the task, repository revision, completed outcomes, evidence and next action.\nRecord native identities only when observed. An old checkpoint does not authorize another Goal.\nSeparate work completion from any explicitly required review or release acceptance.\nEND_TOPIC continuation\n"
+    },
+    {
+      "path": "workspace/harness-config/templates/task.txt",
+      "content": "{\"schema_version\":\"aicatlog.task.v1\",\"id\":\"replace-with-task-id\",\"kind\":\"task\",\"status\":\"planned\",\"owner\":\"replace-with-owner\"}\n\nObjective\nReplace with the useful result.\n\nAcceptance\nReplace with observable completion criteria.\n\nSources\nList the actual authority and source references.\n\nEvidence\nList artifacts only after they exist.\n\nNext action\nState one concrete continuation step.\n"
+    }
   ]
 }

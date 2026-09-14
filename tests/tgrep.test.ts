@@ -12,6 +12,7 @@ test('managed tgrep finds real text, serves shared leases and honors live scans'
   const root = await realpath(temporary); const corpus = join(root, 'corpus'); await mkdir(corpus);
   const ctx = context({ registryPath: join(root, 'registry.json'), stateRoot: join(root, 'state'), cacheRoot: join(root, 'cache'), sessionId: 'first', tgrep });
   const second = { ...ctx, sessionId: 'second' };
+  const isolated = { ...ctx, stateRoot: join(root, 'other-state'), sessionId: 'isolated' };
   try {
     await run(['git', 'init', '-q', corpus]);
     await writeFile(join(corpus, '.gitignore'), 'ignored.txt\n');
@@ -20,6 +21,8 @@ test('managed tgrep finds real text, serves shared leases and honors live scans'
     await writeFile(join(corpus, 'ignored.txt'), 'needle ignored\n');
     await saveJson(ctx.registryPath, registrySchema.parse({ schema_version: 'aicatlog.registry.v1', scopes: [{ id: 'docs', root: corpus, kind: 'documents', idle_seconds: 10 }] }));
     await indexStart(ctx, 'docs'); await indexStart(second, 'docs'); await refreshContent(ctx, 'docs');
+    await indexStart(isolated, 'docs');
+    expect((await indexStatus(isolated, 'docs')).worker?.pid).not.toBe((await indexStatus(ctx, 'docs')).worker?.pid);
     const indexed = await contentFind(ctx, 'needle', { scope: 'docs' });
     expect(indexed.backend).toBe('tgrep_server'); expect(indexed.items).toHaveLength(2);
     expect(indexed.items.find(x => x.path.endsWith('guide.txt'))).toMatchObject({ line: 2, text: 'needle active guidance' });
@@ -41,10 +44,12 @@ test('managed tgrep finds real text, serves shared leases and honors live scans'
     let running = true;
     for (let i = 0; i < 50 && running; i++) { await Bun.sleep(100); running = (await indexStatus(ctx, 'docs')).running; }
     expect(running).toBe(false);
+    expect((await indexStatus(isolated, 'docs')).running).toBe(true);
+    expect((await contentFind(isolated, 'needle', { scope: 'docs' })).total).toBe(2);
   } finally {
-    await indexStop(ctx, 'docs').catch(() => {}); await indexStop(second, 'docs').catch(() => {});
+    await indexStop(ctx, 'docs').catch(() => {}); await indexStop(second, 'docs').catch(() => {}); await indexStop(isolated, 'docs').catch(() => {});
     let running = true;
-    for (let i = 0; i < 100 && running; i++) { await Bun.sleep(100); running = (await indexStatus(ctx, 'docs').catch(() => ({ running: false }))).running; }
+    for (let i = 0; i < 100 && running; i++) { await Bun.sleep(100); running = (await indexStatus(ctx, 'docs').catch(() => ({ running: false }))).running || (await indexStatus(isolated, 'docs').catch(() => ({ running: false }))).running; }
     if (running) throw new Error(`Owned worker did not stop; retained ${root}`);
     await rm(root, { recursive: true, force: true });
   }

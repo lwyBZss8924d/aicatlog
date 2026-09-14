@@ -18,10 +18,15 @@ export async function bootstrap(ctx: Context, options: { repo: string; name?: st
     let content = file.content.replace(/\{\{repo_name\}\}/g, variables.repo_name);
     const old = await readFile(target, 'utf8').catch(() => null);
     if (old === content) { records.push({ path: file.path, sha256: sha(content) }); continue; }
-    if (old !== null && options.adopt && ['AGENTS.md', 'SPEC.md'].includes(file.path)) {
+    if (old !== null && options.adopt && ['AGENTS.md', 'SPEC.md', '.gitignore'].includes(file.path)) {
       if (file.path === 'SPEC.md') { notes.push('Preserved existing SPEC.md'); continue; }
+      if (file.path === '.gitignore') {
+        const missing = content.split('\n').filter(line => line && !line.startsWith('#') && !old.split('\n').includes(line));
+        content = missing.length ? `${old.trimEnd()}\n\n# aicatlog local runtime\n${missing.join('\n')}\n` : old;
+      } else {
       const block = '<!-- aicatlog:begin -->\nUse aicatlog with ./aicatlog-manifest.json for project resource navigation.\nValidate the selected scope with aicatlog harness check --repo .\n<!-- aicatlog:end -->';
       content = old.includes('<!-- aicatlog:begin -->') ? old.replace(/<!-- aicatlog:begin -->[\s\S]*?<!-- aicatlog:end -->/, block) : `${old.trimEnd()}\n\n${block}\n`;
+      }
     } else if (old !== null) {
       const installed = await jsonFile<{ files: { path: string; sha256: string }[] }>(join(root, 'workspace/harness-config/installation-manifest.json')).catch(() => null);
       if (!installed?.files.some(row => row.path === file.path && row.sha256 === sha(old))) {

@@ -9,7 +9,11 @@
       "reason": "operator-selected latest clone; source version not published on npm",
       "patches": [
         "source exports",
-        "No MCP runtime and discovery"
+        "No MCP runtime and discovery",
+        "discovery schemas preserve required fields during structured-input transport parsing",
+        "stop builtin parsing after double dash",
+        "TypeScript OpenAPI return types",
+        "omit unsupported update and token-slicing flags"
       ]
     },
     {
@@ -20,7 +24,8 @@
       "patches": [
         "programmatic entrypoint",
         "qualified discovery",
-        "explicit targets; no interactive installer execution"
+        "explicit targets; no interactive installer execution",
+        "canonical containment before metadata and manifest reads"
       ]
     },
     {

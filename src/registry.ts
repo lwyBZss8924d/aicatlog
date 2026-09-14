@@ -30,6 +30,8 @@ export async function refreshCatalog(ctx: Context): Promise<Catalog> {
   const stampPaths = new Set<string>();
   async function manifest(path: string, scope: Scope, parent?: string): Promise<void> {
     const canonical = await realpath(path);
+    const readRoots = await Promise.all([scope.root, ...scope.linked_roots].map(r => realpath(expand(r, dirname(ctx.registryPath)))));
+    if (!readRoots.some(r => inside(r, canonical))) throw new AicatlogError('OUTSIDE_SCOPE', 'Manifest file leaves declared read roots.');
     if (manifestSeen.has(canonical)) return;
     manifestSeen.add(canonical);
     stampPaths.add(canonical);
@@ -44,7 +46,7 @@ export async function refreshCatalog(ctx: Context): Promise<Catalog> {
       }
       const id = String(row.id ?? row.name ?? '');
       if (!id) { errors.push({ code: 'INVALID_MANIFEST', path, message: 'Entry lacks id' }); continue; }
-      const qualified = id.includes(':') ? id : `${scope.id}:${id}`;
+      const qualified = id.includes(':') ? id : `${parent ?? scope.id}:${id}`;
       resources.push(resourceSchema.parse({ ...row, id: qualified, name: String(row.name ?? row.id),
         kind: row.kind ?? 'document', scope: scope.id, owner: row.owner ?? 'source', path: entryPath,
         summary: String(row.summary ?? row.when ?? ''), parent,
@@ -61,7 +63,16 @@ export async function refreshCatalog(ctx: Context): Promise<Catalog> {
     if (scope.kind === 'skills' || scope.kind === 'market' || scope.kind === 'repo') {
       const result = await discover(root, { excludes: scope.excludes, linkedRoots: scope.linked_roots.map(p => expand(p, dirname(ctx.registryPath))) });
       for (const path of result.directories) stampPaths.add(path);
-      resources.push(...result.skills.map(skill => ({ ...skillResource(scope, skill, registry, dirname(ctx.registryPath)), parent: scope.id })));
+      const selected = result.skills.map(skill => ({ ...skillResource(scope, skill, registry, dirname(ctx.registryPath)), parent: scope.id }));
+      resources.push(...selected);
+      for (const [index, skill] of result.skills.entries()) {
+        const metadata = skill.metadata.metadata as Record<string, unknown> | undefined;
+        if (typeof metadata?.aicatlog_manifest === 'string') {
+          const path = expand(metadata.aicatlog_manifest, dirname(skill.path));
+          try { await manifest(path, scope, selected[index]!.id); }
+          catch (error) { errors.push({ code: 'MANIFEST_UNAVAILABLE', path, message: String(error) }); }
+        }
+      }
       errors.push(...result.errors.map(e => ({ code: 'SKILL_METADATA_INVALID', ...e })));
     }
     for (const entry of scope.manifests) {
@@ -177,7 +188,7 @@ export async function checkRegistry(ctx: Context) {
     if (seen.has(entry.id)) issues.push({ code: 'DUPLICATE_ID', id: entry.id });
     seen.add(entry.id);
   }
-  for (const entry of registry.skills) if (entry.target && !registry.scopes.some(s => inside(expand(s.root), expand(entry.target!))))
+  for (const entry of registry.skills) if (entry.target && !registry.scopes.some(s => inside(expand(s.root, dirname(ctx.registryPath)), expand(entry.target!, dirname(ctx.registryPath)))))
     issues.push({ code: 'TARGET_OUTSIDE_SCOPES', id: entry.id });
   return { ok: !issues.length, schema_version: registry.schema_version, registrations: registry.skills.length,
     scopes: registry.scopes.length, issues };

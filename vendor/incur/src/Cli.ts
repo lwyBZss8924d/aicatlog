@@ -1358,11 +1358,11 @@ async function serveImpl(
           description: cmd.description ?? options.description,
           globals: options.globals,
           version: options.version,
-          args: cmd.args,
+          args: cmd.discovery?.args ?? cmd.args,
           env: cmd.env,
           envSource: options.env,
           hint: cmd.hint,
-          options: cmd.options,
+          options: cmd.discovery?.options ?? cmd.options,
           examples: formatExamples(cmd.examples),
           usage: cmd.usage,
           commands: commands.size > 0 ? collectHelpCommands(commands) : undefined,
@@ -1446,11 +1446,11 @@ async function serveImpl(
             description: cmd.description ?? options.description,
             globals: options.globals,
             version: options.version,
-            args: cmd.args,
+            args: cmd.discovery?.args ?? cmd.args,
             env: cmd.env,
             envSource: options.env,
             hint: cmd.hint,
-            options: cmd.options,
+            options: cmd.discovery?.options ?? cmd.options,
             examples: formatExamples(cmd.examples),
             usage: cmd.usage,
             commands: collectHelpCommands(helpCmds),
@@ -1490,11 +1490,11 @@ async function serveImpl(
           description: cmd.description,
           globals: options.globals,
           version: isRootCmd ? options.version : undefined,
-          args: cmd.args,
+          args: cmd.discovery?.args ?? cmd.args,
           env: cmd.env,
           envSource: options.env,
           hint: cmd.hint,
-          options: cmd.options,
+          options: cmd.discovery?.options ?? cmd.options,
           examples: formatExamples(cmd.examples),
           usage: cmd.usage,
           commands: helpSubcommands,
@@ -1535,9 +1535,9 @@ async function serveImpl(
     const cmd = resolved.command
     const format = formatExplicit ? formatFlag : 'toon'
     const result: Record<string, unknown> = {}
-    if (cmd.args) result.args = Schema.toJsonSchema(cmd.args)
+    if (cmd.discovery?.args ?? cmd.args) result.args = Schema.toJsonSchema((cmd.discovery?.args ?? cmd.args)!)
     if (cmd.env) result.env = Schema.toJsonSchema(cmd.env)
-    if (cmd.options) result.options = Schema.toJsonSchema(cmd.options)
+    if (cmd.discovery?.options ?? cmd.options) result.options = Schema.toJsonSchema((cmd.discovery?.options ?? cmd.options)!)
     if (cmd.output) result.output = Schema.toJsonSchema(cmd.output)
     if (options.globals?.schema) result.globals = Schema.toJsonSchema(options.globals.schema)
     writeln(Formatter.format(result, format))
@@ -3878,7 +3878,7 @@ function commandManifestEntry(
   const cmd: ReturnType<typeof collectCommands>[number] = { name: path.join(' ') }
   if (entry.description) cmd.description = entry.description
 
-  const inputSchema = buildInputSchema(entry.args, entry.env, entry.options)
+  const inputSchema = buildInputSchema(entry.discovery?.args ?? entry.args, entry.env, entry.discovery?.options ?? entry.options)
   const outputSchema = entry.output ? Schema.toJsonSchema(entry.output) : undefined
   if (inputSchema || outputSchema) {
     cmd.schema = {}
@@ -4138,6 +4138,8 @@ type CommandDefinition<
 > = CommandMeta<options> & {
   /** Alternative names for this command (e.g. `['extensions', 'ext']` for an `extension` command). */
   aliases?: string[] | undefined
+  /** Discovery contract when transport parsing is deferred until structured input is merged. */
+  discovery?: { args?: z.ZodObject<any>; options?: z.ZodObject<any> } | undefined
   /** Zod schema for positional arguments. */
   args?: args | undefined
   /** Zod schema for environment variables. Keys are the variable names (e.g. `NPM_TOKEN`). */

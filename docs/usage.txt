@@ -30,6 +30,8 @@ aicatlog apply --plan <prepared-plan-file>
 
 Apply checks the prepared registry, source and target fingerprints. Changed targets
 require a new plan. The run directory retains backups, a journal and a receipt.
+Atomic replacement currently supports macOS and Linux. Keep --state on the same
+filesystem as source-changing targets; cross-device plans fail before replacement.
 Use --recover only for the exact interrupted plan with an exited writer.
 External source owners are reported explicitly; generic installation does not replace
 an owner kit's workflow or Hook registrations.
