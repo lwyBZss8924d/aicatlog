@@ -1,0 +1,16 @@
+{
+  "schema_version": "proof_of_useful_work.v1",
+  "commit": "e9c66707f00c65b2e484806c0d25353882155809",
+  "phase": "R2.1",
+  "status": "in_progress",
+  "outcome": "Imported pinned Incur source because its declared 0.6.0 is not published on npm; integration in progress",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59"
+  ],
+  "validation": [
+    "upstream source commit f617e17073a4fc972d9c9330e6e623a024f6c626 inspected"
+  ],
+  "remote_push": false
+}
