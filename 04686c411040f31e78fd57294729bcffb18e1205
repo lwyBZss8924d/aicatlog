@@ -1,0 +1,18 @@
+{
+  "schema_version": "proof_of_useful_work.v1",
+  "commit": "04686c411040f31e78fd57294729bcffb18e1205",
+  "phase": "R2-core-final-repair",
+  "status": "in_progress",
+  "outcome": "Reject a batch receipt if an earlier target drifted; normalize indexed/live hit text and adopt the foundation in this repository",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59"
+  ],
+  "validation": [
+    "bun run check: 33 tests pass, typecheck pass",
+    "self-bootstrap applied and repeat plan has zero changes",
+    "Three local content queries have exact index/live result parity; no model utility claim"
+  ],
+  "remote_push": false
+}
