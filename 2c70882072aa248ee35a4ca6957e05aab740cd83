@@ -1,0 +1,18 @@
+{
+  "schema_version": "proof_of_useful_work.v1",
+  "commit": "2c70882072aa248ee35a4ca6957e05aab740cd83",
+  "phase": "R2-source-closeout",
+  "status": "in_progress",
+  "outcome": "Resolve the nonblocking M1 self-foundation metadata finding through prepared bootstrap; global R2 adoption remains blocked",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59"
+  ],
+  "validation": [
+    "Codex-test source accept_with_followups at 04686c411040f31e78fd57294729bcffb18e1205; all blocking findings closed",
+    "M1 normal bootstrap metadata apply and zero-operation repeat verified",
+    "33 runtime tests/typecheck and relocated CLI/SDK evidence retained from unchanged implementation"
+  ],
+  "remote_push": false
+}
