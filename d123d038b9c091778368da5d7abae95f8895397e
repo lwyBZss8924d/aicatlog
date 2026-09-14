@@ -1,0 +1,17 @@
+{
+  "schema_version": "proof_of_useful_work.v1",
+  "commit": "d123d038b9c091778368da5d7abae95f8895397e",
+  "phase": "R2-owner-alias-bindings",
+  "status": "in_progress",
+  "outcome": "Recheck protected owner resolutions and registry post-state for every completion path",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59"
+  ],
+  "validation": [
+    "bun run check: 54 tests pass and typecheck pass",
+    "External registration retargeting and registry drift are refused"
+  ],
+  "remote_push": false
+}
