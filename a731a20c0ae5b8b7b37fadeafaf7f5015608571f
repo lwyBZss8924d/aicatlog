@@ -1,0 +1,37 @@
+{
+  "schema_version": "pouw.v1",
+  "commit": "a731a20c0ae5b8b7b37fadeafaf7f5015608571f",
+  "phase": "R5",
+  "status": "source_delivered",
+  "version": "0.2.0",
+  "recorded_at_utc": "2026-09-15T20:36:31.681290+00:00",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [
+    {
+      "role": "implementation",
+      "session_id": "01a0a6a0-451a-7e61-8886-56a9ea68ab68"
+    },
+    {
+      "role": "independent_source_reviewer",
+      "session_id": "01a0a6bd-e468-7013-9704-35b2a613d048",
+      "physical_home": "codex-test"
+    }
+  ],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59",
+    "01a0a6a0-451a-7e61-8886-56a9ea68ab68",
+    "01a0a6bd-e468-7013-9704-35b2a613d048"
+  ],
+  "outcome": "Declared index/Markdown context inspection, current heading retrieval, explicit direct resource aliases across CLI/SDK/Fetch.",
+  "verification": [
+    "TypeScript and 91 tests passed",
+    "Independent claims 1 and 2 PASS; whole multi-repo bundle remains rejected for a separate Self-Goal defect",
+    "Exact reviewed source digests unchanged; staged diff check passed"
+  ],
+  "review_sha256": "3ab909f3a8a2197c7b373473b22975eaf01b0cdb5231a753d283c3d18b035a7e",
+  "limits": [
+    "No native-client compatibility or efficiency gain claimed",
+    "Bun release build and local deployment recorded separately",
+    "No private source paths or raw trajectories are included in this note"
+  ]
+}
