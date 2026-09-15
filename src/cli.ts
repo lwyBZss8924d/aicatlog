@@ -2,8 +2,8 @@ import packageInfo from "../package.json";
 import { Cli } from 'incur';
 import { z } from 'zod';
 import { context, expand, inputJson, jsonFile, run } from './io.ts';
-import { AicatlogError, registrySchema, resourceSchema, planSchema, listOutputSchema, readOutputSchema, type Context } from './types.ts';
-import { catalogPath, checkRegistry, getCatalog, listResources, loadRegistry, readResource, refreshCatalog, selectResource } from './registry.ts';
+import { AicatlogError, registrySchema, resourceSchema, planSchema, listOutputSchema, readOutputSchema, contextInspectionSchema, type Context } from './types.ts';
+import { catalogPath, checkRegistry, getCatalog, listResources, loadRegistry, readResource, inspectContext, refreshCatalog, selectResource } from './registry.ts';
 import { contentFind, indexStart, indexStatus, indexStop, refreshContent } from './content-index.ts';
 import { applyPlan, makePlan, operation } from './plans.ts';
 import { skillsPlan, skillsStatus } from './skills.ts';
@@ -52,7 +52,7 @@ export function createAicatlog(defaults: Partial<Context> = {}, extensions: Exte
       const key = segments.join(' ');
       if (!groups.has(key)) {
         const group = Cli.create(key, { description: ({ skills: 'Inspect Skills or prepare selected installation and projection changes.', index: 'Check structural indexes or manage scoped content workers.',
-          harness: 'Bootstrap and validate a portable repository foundation.', registry: 'Import and validate desired-state configuration.', env: 'Inspect available tools and their exact help entrypoints.' } as Record<string, string>)[key] ?? key, sync: false, update: false });
+          harness: 'Bootstrap and validate a portable repository foundation.', registry: 'Import and validate desired-state configuration.', context: 'Inspect current declared context structure without expanding links.', env: 'Inspect available tools and their exact help entrypoints.' } as Record<string, string>)[key] ?? key, sync: false, update: false });
         groups.set(key, group); cli.command(group);
       }
       parent = groups.get(key)! as typeof cli;
@@ -84,7 +84,7 @@ export function createAicatlog(defaults: Partial<Context> = {}, extensions: Exte
   add('catalog', { readOnly: true, description: 'Start here: show resource scopes and the next useful discovery operations.', run: async ctx => {
     const registry = await loadRegistry(ctx); const catalog = await getCatalog(ctx);
     return { scopes: registry.scopes.map(s => ({ id: s.id, kind: s.kind, content_index: s.content_index })), resources: catalog.resources.length,
-      capabilities: ['list: select metadata', 'find: search metadata; --content searches one corpus', 'get: inspect a qualified resource', 'read: read one current source topic', 'apply: execute a prepared source change'], diagnostics: catalog.errors };
+      capabilities: ['list: select metadata', 'find: search metadata; --content searches one corpus', 'get: inspect a qualified resource', 'context inspect: inspect current context headings and inert references', 'read: read one current source topic or context heading', 'apply: execute a prepared source change'], diagnostics: catalog.errors };
   } });
   add('list', { readOnly: true, description: 'List compact resource metadata; use kind/scope and pagination before reading bodies.', options: z.object({ kind: z.string().optional(), scope: z.string().optional(), ...paging }), output: listOutputSchema, run: listResources });
   add('find', { readOnly: true, description: 'Find applicable resources; --content searches a selected corpus and --fresh reads current files.', args: z.object({ query: z.string().min(1) }),
@@ -95,7 +95,9 @@ export function createAicatlog(defaults: Partial<Context> = {}, extensions: Exte
       return contentFind(ctx, input.query, input);
     } });
   add('get', { readOnly: true, description: 'Get one resource contract and navigation pointers without loading its body.', args: z.object({ id: z.string() }), output: resourceSchema, run: (ctx, { id }) => selectResource(ctx, id) });
-  add('read', { readOnly: true, description: 'Read one actual source document or selected topic with line and digest provenance.', args: z.object({ id: z.string() }),
+  add('context inspect', { readOnly: true, description: 'Inspect a registered context index or Markdown leaf with current source provenance; never fetch or expand references.',
+    args: z.object({ id: z.string() }), output: contextInspectionSchema, run: (ctx, { id }) => inspectContext(ctx, id) });
+  add('read', { readOnly: true, description: 'Read one actual source document, explicit topic or context heading with line and digest provenance.', args: z.object({ id: z.string() }),
     options: z.object({ section: z.string().optional(), line: z.number().int().positive().default(1), limit: z.number().int().positive().default(200) }),
     output: readOutputSchema,
     run: (ctx, input) => readResource(ctx, input.id, input) });

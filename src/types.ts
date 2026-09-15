@@ -16,6 +16,7 @@ export const scopeSchema = z.object({
 });
 export type Scope = z.infer<typeof scopeSchema>;
 
+export const resolutionSchema = z.object({ requested_id: z.string(), canonical_id: z.string(), via: z.literal('alias') });
 export const resourceSchema = z.object({
   id: z.string().min(1), name: z.string().min(1),
   kind: z.string().min(1),
@@ -23,6 +24,7 @@ export const resourceSchema = z.object({
   path: z.string().optional(), when: z.string().optional(), parent: z.string().optional(),
   children: z.array(z.string()).default([]), command: z.array(z.string()).optional(),
   source: z.record(z.string(), z.unknown()).optional(),
+  document_role: z.string().optional(), context_format: z.string().optional(), resolution: resolutionSchema.optional(),
   activation: z.string().optional(), topics: z.array(z.object({ id: z.string(), begin: z.string(), end: z.string() })).optional(),
 }).passthrough();
 export type Resource = z.infer<typeof resourceSchema>;
@@ -44,7 +46,7 @@ export const registrySchema = z.object({
   project_clients: z.array(z.record(z.string(), z.unknown())).default([]),
   normalization_rules: z.array(z.record(z.string(), z.unknown())).default([]),
   resources: z.array(resourceSchema).default([]),
-  settings: z.record(z.string(), z.unknown()).default({}),
+  settings: z.object({ resource_aliases: z.record(z.string().min(1), z.string().min(1)).optional() }).passthrough().default({}),
   import_provenance: z.record(z.string(), z.unknown()).optional(),
 });
 export type Registry = z.infer<typeof registrySchema>;
@@ -55,7 +57,20 @@ export type Catalog = { schema_version: 'aicatlog.catalog.v1'; generated_at: str
 
 export const diagnosticSchema = z.object({ code: z.string(), path: z.string().optional(), message: z.string() });
 export const listOutputSchema = z.object({ items: z.array(resourceSchema), total: z.number(), next_cursor: z.number().nullable(), catalog_generated_at: z.string(), diagnostics: z.array(diagnosticSchema) });
-export const readOutputSchema = z.object({ id: z.string(), source: z.object({ path: z.string(), sha256: z.string(), start_line: z.number(), end_line: z.number(), current_read_at: z.string() }), text: z.string(), next_line: z.number().nullable() });
+export const sourceReadSchema = z.object({ path: z.string(), sha256: z.string(), start_line: z.number(), end_line: z.number(), current_read_at: z.string() });
+export const readOutputSchema = z.object({ id: z.string(), resolution: resolutionSchema.optional(), source: sourceReadSchema, text: z.string(), next_line: z.number().nullable() });
+export const contextSectionSchema = z.object({ selector: z.string(), slug: z.string(), label: z.string(), level: z.number().int(), start_line: z.number().int(), end_line: z.number().int() });
+export type ContextSection = z.infer<typeof contextSectionSchema>;
+export const contextInspectionSchema = z.object({
+  schema_version: z.literal('aicatlog.context.v1'), id: z.string(), resolution: resolutionSchema.optional(),
+  document_role: z.enum(['context_index', 'prompt_context']), context_format: z.enum(['llms-txt-v2', 'markdown']),
+  classification: z.enum(['declared', 'filename']), source: sourceReadSchema, title: z.string().nullable(), summary: z.string().nullable(),
+  sections: z.array(contextSectionSchema),
+  references: z.array(z.object({ label: z.string(), target: z.string(), kind: z.enum(['relative', 'absolute', 'fragment', 'uri']), start_line: z.number().int(), end_line: z.number().int() })),
+  diagnostics: z.array(z.object({ code: z.string(), message: z.string(), severity: z.enum(['error', 'warning']), start_line: z.number().int(), end_line: z.number().int() })),
+  valid: z.boolean(),
+});
+export type ContextInspection = z.infer<typeof contextInspectionSchema>;
 
 export class AicatlogError extends Error {
   constructor(public code: string, message: string, public details?: unknown, public retryable = false) { super(message); }

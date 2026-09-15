@@ -3,12 +3,34 @@ import { basename, dirname, extname, join, relative } from 'node:path';
 import { discover, readSkill } from '@aicatlog/skills-core';
 import { registrySchema, resourceSchema, AicatlogError, type Registry, type Catalog, type Context, type Resource, type Scope } from './types.ts';
 import { expand, inside, jsonFile, now, saveJson, sha } from './io.ts';
+import { contextProfile, inspectContextSource, selectContextSection } from './context.ts';
 
 export async function loadRegistry(ctx: Context): Promise<Registry> {
   return registrySchema.parse(await jsonFile(ctx.registryPath));
 }
 export const registryDigest = async (ctx: Context) => sha(await readFile(ctx.registryPath));
 export const catalogPath = (ctx: Context) => join(ctx.cacheRoot, 'catalogs', `${sha(ctx.registryPath)}.json`);
+
+function aliasIssues(registry: Registry, resources: Resource[]) {
+  const aliases = registry.settings.resource_aliases ?? {};
+  const issues: { code: string; id: string; message: string }[] = [];
+  for (const [id, target] of Object.entries(aliases)) {
+    const problem = (code: string, message: string) => issues.push({ code, id, message: `Resource alias ${JSON.stringify(id)}: ${message}` });
+    if (resources.some(r => r.id === id)) { problem('ALIAS_SHADOWS_RESOURCE', 'cannot shadow a real resource ID.'); continue; }
+    const matching = resources.filter(r => r.id === target);
+    if (matching.length && /^[^:\s]+:.+$/.test(target)) {
+      if (matching.length > 1) problem('ALIAS_AMBIGUOUS_TARGET', `target ${JSON.stringify(target)} has duplicate resource rows.`);
+      continue;
+    }
+    const visited = new Set([id]); let cursor = target;
+    while (Object.hasOwn(aliases, cursor) && !visited.has(cursor)) { visited.add(cursor); cursor = aliases[cursor]!; }
+    if (visited.has(cursor)) { problem('ALIAS_CYCLE', 'cycle detected; map directly to a canonical qualified resource ID.'); continue; }
+    if (Object.hasOwn(aliases, target)) { problem('ALIAS_TARGET_IS_ALIAS', 'alias chains are not supported; map directly to a canonical qualified resource ID.'); continue; }
+    if (!/^[^:\s]+:.+$/.test(target)) { problem('ALIAS_TARGET_NOT_CANONICAL', 'target must be a qualified resource ID.'); continue; }
+    problem('ALIAS_DANGLING', `target ${JSON.stringify(target)} is not registered.`);
+  }
+  return issues;
+}
 
 function skillResource(scope: Scope, skill: Awaited<ReturnType<typeof readSkill>>, registry: Registry, base: string): Resource {
   const path = expand(skill.path);
@@ -117,6 +139,7 @@ export async function refreshCatalog(ctx: Context): Promise<Catalog> {
     if (resource.parent) resources.find(r => r.id === resource.parent)?.children.push(resource.id);
   }
   resources.sort((a, b) => a.id.localeCompare(b.id));
+  errors.push(...aliasIssues(registry, resources).map(({ code, message }) => ({ code, message })));
   const source_stamps: Record<string, string> = {};
   for (const path of stampPaths) source_stamps[path] = await stamp(path);
   const catalog: Catalog = { schema_version: 'aicatlog.catalog.v1', generated_at: now(), registry_sha256: await registryDigest(ctx), resources, errors, source_stamps };
@@ -140,6 +163,14 @@ export async function selectResource(ctx: Context, id: string): Promise<Resource
   const catalog = await getCatalog(ctx);
   const exact = catalog.resources.find(r => r.id === id);
   if (exact) return exact;
+  const registry = await loadRegistry(ctx);
+  const aliases = registry.settings.resource_aliases ?? {};
+  if (Object.hasOwn(aliases, id)) {
+    const issue = aliasIssues(registry, catalog.resources).find(issue => issue.id === id);
+    if (issue) throw new AicatlogError(issue.code, issue.message);
+    const canonical = catalog.resources.find(r => r.id === aliases[id])!;
+    return { ...canonical, resolution: { requested_id: id, canonical_id: canonical.id, via: 'alias' } };
+  }
   const matching = catalog.resources.filter(r => r.name === id);
   if (matching.length === 1) return matching[0]!;
   if (matching.length) throw new AicatlogError('AMBIGUOUS_RESOURCE', `Use a qualified id for ${id}`, { candidates: matching.map(r => r.id) });
@@ -157,7 +188,7 @@ export async function listResources(ctx: Context, options: { query?: string; kin
     catalog_generated_at: catalog.generated_at, diagnostics: catalog.errors };
 }
 
-export async function readResource(ctx: Context, id: string, options: { section?: string; line?: number; limit?: number } = {}) {
+async function resourceSource(ctx: Context, id: string) {
   const resource = await selectResource(ctx, id);
   if (!resource.path) throw new AicatlogError('NO_DOCUMENT', `Resource ${id} has no source document`);
   const registry = await loadRegistry(ctx);
@@ -165,18 +196,38 @@ export async function readResource(ctx: Context, id: string, options: { section?
   const resolved = await realpath(resource.path).catch(() => resource.path!);
   const roots = await Promise.all((scope ? [scope.root, ...scope.linked_roots] : []).map(r => realpath(expand(r, dirname(ctx.registryPath))).catch(() => expand(r, dirname(ctx.registryPath)))));
   if (!roots.some(r => inside(r, resolved))) throw new AicatlogError('OUTSIDE_SCOPE', 'Source is outside registered read roots.');
-  const bytes = await readFile(resource.path).catch(error => { throw new AicatlogError('SOURCE_UNAVAILABLE', `Cannot read ${resource.path}`, { reason: String(error) }); });
+  const bytes = await readFile(resolved).catch(error => { throw new AicatlogError('SOURCE_UNAVAILABLE', `Cannot read ${resolved}`, { reason: String(error) }); });
   const lines = bytes.toString('utf8').split(/\r?\n/);
+  return { resource, bytes, lines, resolved };
+}
+
+export async function inspectContext(ctx: Context, id: string) {
+  const { resource, bytes, lines, resolved } = await resourceSource(ctx, id);
+  const profile = contextProfile(resource);
+  if (!profile) throw new AicatlogError('UNSUPPORTED_CONTEXT_RESOURCE', `Resource ${resource.id} is not declared as context; declare document_role and context_format in its manifest.`);
+  return { schema_version: 'aicatlog.context.v1' as const, id: resource.id, ...(resource.resolution ? { resolution: resource.resolution } : {}), ...profile,
+    source: { path: resolved, sha256: sha(bytes), start_line: 1, end_line: lines.length, current_read_at: now() }, ...inspectContextSource(lines, profile) };
+}
+
+export async function readResource(ctx: Context, id: string, options: { section?: string; line?: number; limit?: number } = {}) {
+  const { resource, bytes, lines, resolved } = await resourceSource(ctx, id);
   let start = Math.max(0, (options.line ?? 1) - 1), end = lines.length;
   if (options.section) {
     const topic = resource.topics?.find(t => t.id === options.section);
     const begin = topic?.begin ?? `BEGIN_TOPIC ${options.section}`, finish = topic?.end ?? `END_TOPIC ${options.section}`;
     start = lines.indexOf(begin); end = lines.indexOf(finish, start + 1) + 1;
-    if (start < 0 || end <= start) throw new AicatlogError('SECTION_NOT_FOUND', `Missing topic ${options.section} in current source`);
+    if (topic || start >= 0) {
+      if (start < 0 || end <= start) throw new AicatlogError('SECTION_NOT_FOUND', `Missing topic ${options.section} in current source`);
+    } else {
+      const profile = contextProfile(resource);
+      if (!profile) throw new AicatlogError('SECTION_NOT_FOUND', `Missing topic ${options.section} in current source`);
+      const section = selectContextSection(inspectContextSource(lines, profile).sections, options.section);
+      start = section.start_line - 1; end = section.end_line;
+    }
     start = Math.max(start, (options.line ?? 1) - 1);
   }
   const actualEnd = Math.min(end, start + (options.limit ?? 200));
-  return { id: resource.id, source: { path: resource.path, sha256: sha(bytes), start_line: start + 1, end_line: actualEnd, current_read_at: now() },
+  return { id: resource.id, ...(resource.resolution ? { resolution: resource.resolution } : {}), source: { path: resolved, sha256: sha(bytes), start_line: start + 1, end_line: actualEnd, current_read_at: now() },
     text: lines.slice(start, actualEnd).join('\n'), next_line: actualEnd < end ? actualEnd + 1 : null };
 }
 
@@ -190,6 +241,7 @@ export async function checkRegistry(ctx: Context) {
   }
   for (const entry of registry.skills) if (entry.target && !registry.scopes.some(s => inside(expand(s.root, dirname(ctx.registryPath)), expand(entry.target!, dirname(ctx.registryPath)))))
     issues.push({ code: 'TARGET_OUTSIDE_SCOPES', id: entry.id });
+  if (registry.settings.resource_aliases) issues.push(...aliasIssues(registry, (await getCatalog(ctx)).resources));
   return { ok: !issues.length, schema_version: registry.schema_version, registrations: registry.skills.length,
     scopes: registry.scopes.length, issues };
 }

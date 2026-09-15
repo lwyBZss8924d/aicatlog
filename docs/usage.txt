@@ -5,11 +5,31 @@ aicatlog catalog
 aicatlog list --kind skill --limit 10 --json
 aicatlog find "repository setup" --json
 aicatlog get <qualified-id> --json
+aicatlog context inspect <qualified-id> --json
 aicatlog read <qualified-id> --section <topic-id> --json
 
 Metadata navigation does not load every Skill body. A qualified ID identifies one
 resource even when names repeat. Sources and cached structural indexes are distinct.
 Use index refresh after changing the resource corpus outside the owner commands.
+For declared context resources, context inspect returns current headings, line
+ranges, a source digest and inline link targets without loading linked documents.
+Use read --section with a unique heading label/slug or an inspected heading:<line>
+selector. Repeated headings require an explicit selector; topic mappings take
+priority. An index may return valid=false with diagnostics while preserving its
+sections and links for repair. The operation does not return the complete body.
+
+Declare document_role/context_format as context_index/llms-txt-v2 for indexes or
+prompt_context/markdown for context leaves. Only an undeclared file named llms.txt
+uses filename classification. A workflow.llms.txt suffix alone does not assign a
+role. Other roles, including output_template, remain ordinary catalog metadata.
+The scanner supports top-level ATX/Setext headings, fenced code and inline links;
+reference-style links, HTML blocks and nested container headings are outside its
+navigation contract. No link expansion or target-existence check is performed.
+
+settings.resource_aliases may contain {"retired:guide":"docs:guide"}. Each value
+must be an existing qualified ID. Aliases do not create extra resource rows or
+native Skill files. registry check reports invalid mappings; exact real IDs retain
+priority and a successful alias lookup reports canonical ID and resolution details.
 END_TOPIC discover
 
 BEGIN_TOPIC search

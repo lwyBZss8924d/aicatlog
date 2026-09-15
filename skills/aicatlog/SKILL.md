@@ -11,6 +11,10 @@ to `get` or `read`. Use `--registry <file>` for a repository or alternate profil
 Use `list` and `find` for metadata. Select one scope before `find --content`; use
 `--fresh` for recent edits or current absence checks. `read` always reads the source.
 Use `--schema --json` for exact inputs/outputs and `--filter-output` to narrow results.
+For a declared context resource, use `context inspect <id>` to select one current
+heading, then `read <id> --section <selector>`. References are inert; inspect only
+the source needed for the task. Retired catalog aliases return their canonical ID
+and do not create native Skill-name aliases or extra loading roots.
 
 Source changes are prepared first. Inspect the returned plan, then use
 `aicatlog apply --plan <file>` within the task's authorization. External source

@@ -21,6 +21,35 @@ update, remove, normalize and sync selected resources. Harness bootstrap/check a
 manifest operations consume portable profiles. Env inspect/help routes to exact
 registered runtime tools. Registry import/check migrates existing desired state.
 
+Context inspection uses `context inspect <id>` through the same CLI, SDK and Fetch
+operation. Manifests declare `document_role: context_index` with
+`context_format: llms-txt-v2`, or `document_role: prompt_context` with
+`context_format: markdown`. Either field can identify its matching pair. Other
+resource roles remain valid metadata. Only the canonical basename `llms.txt` is an
+undeclared format fallback; a `*.llms.txt` leaf needs an explicit declaration.
+Inspection reads current source within registered roots and returns its digest,
+line ranges, title, optional blockquote summary, headings, inert inline Markdown
+references and diagnostics. It never reads or fetches referenced targets.
+
+The bounded scanner recognizes top-level ATX and Setext headings, fenced code and
+inline links with balanced or escaped destinations. It is not a full CommonMark
+renderer; reference-style links, HTML blocks and headings nested inside containers
+are outside its navigation contract. Index validation accepts H1-only input and
+an optional BOM; H2 file lists may use Markdown bullets or ordered list markers.
+Duplicate index labels and malformed file-list content are errors, while repeated
+Markdown leaf headings are preserved. `read --section` accepts a unique heading
+label or slug, or the explicit `heading:<line>` selector returned by inspection.
+Ambiguous headings fail with choices. Selectors describe the returned source digest
+and may change after edits. Explicit topic mappings and BEGIN_TOPIC reads retain
+priority. The Optional index section has no automatic filtering behavior.
+
+Registry `settings.resource_aliases` maps explicit retired locators directly to
+existing canonical qualified IDs. Resolution returns the canonical resource and
+alias provenance without creating resource rows or native Skill files. Exact real
+IDs win; registry checks diagnose shadowing, dangling targets, cycles, alias chains,
+unqualified targets and duplicate target rows. Invalid aliases cannot resolve.
+Catalog aliases do not define native Skill invocation names or client precedence.
+
 Source-changing operations produce plans. `apply --plan <file>` checks the selected
 source and destination preconditions and never broadens the plan. Backups and a
 receipt support recovery. Cache refresh and explicitly configured index workers
