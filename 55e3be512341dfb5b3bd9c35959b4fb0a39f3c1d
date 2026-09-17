@@ -1,0 +1,32 @@
+{
+  "schema_version": "proof_of_useful_work.v1",
+  "status": "source_and_local_delivery_complete",
+  "commit": "55e3be512341dfb5b3bd9c35959b4fb0a39f3c1d",
+  "primary_session_id": "01a09a69-f936-7260-bc8e-797f4e160b59",
+  "partner_sessions": [
+    {
+      "session_id": "01a0aeae-50af-7f11-bf6e-da75bff26f67",
+      "role": "aicatlog_installer_worker"
+    },
+    {
+      "session_id": "01a0aeb6-8557-7a61-bcda-3ac64c2f8555",
+      "role": "independent_codex_test_source_auditor"
+    }
+  ],
+  "source_raw_session_ids": [
+    "01a09a69-f936-7260-bc8e-797f4e160b59",
+    "01a0aeae-50af-7f11-bf6e-da75bff26f67",
+    "01a0aeb6-8557-7a61-bcda-3ac64c2f8555"
+  ],
+  "outcome": "Installer now exposes the bundled tgrep and aicatlog in one previewed plan while preserving foreign entries. The real installed 0.2.0 release was repaired with one symlink; executable bytes unchanged.",
+  "checks": [
+    "bun run check: 108 passed, 0 failed; TypeScript passed",
+    "Independent exact-source review accepted",
+    "Real standalone version/search, rg JSONL parity and exit codes 0/1/2 passed"
+  ],
+  "limits": [
+    "No native task activation or historical Goal resume.",
+    "No model-efficiency improvement claimed.",
+    "Release version and compiled backend were not changed."
+  ]
+}
