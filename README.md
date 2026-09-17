@@ -23,6 +23,13 @@ dist/aicatlog apply --plan /path/to/prepared-plan.json
 Use the release directory matching your platform. Build also creates
 `dist/aicatlog-sdk.tgz` with Bun. The native backend source/version is declared in
 `vendor-manifest.json`; it is built with Cargo and assembled into the Bun release.
+The installation plan exposes both `aicatlog` and standalone `tgrep` in
+`~/.local/bin` (override with `--bin`), pointing into the versioned release under
+`~/.local/share/aicatlog` (override with `--prefix`). Put the selected bin directory
+on `PATH` to use `tgrep --help` directly. Updates move both owned links together;
+an existing executable or link outside this installation's release layout is a
+conflict and is not overwritten. Both executable artifacts must be present and
+match the release manifest before a plan is prepared.
 Atomic source mutation currently supports macOS/Linux and needs a state directory
 on the same filesystem as its targets. `--state` selects that directory.
 
